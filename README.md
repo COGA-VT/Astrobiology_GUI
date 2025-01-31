@@ -1,2 +1,2 @@
 # Astrobiology_GUI
-This repository hosts code for the Teachable Artificial Intelligence for Astrobiology Investigations Graphical User Interface
+This repository hosts code for the Teachable Artificial Intelligence for Astrobiology Investigations Graphical User Interface. This application is designed to allow astrobiologists to experiment with machine learning approaches including unsupervised and supervised methods using their own data. This application will be especially useful for those who may be interested in applying machine learning but either don't know where to start or do not have the time to learn programming languages.
