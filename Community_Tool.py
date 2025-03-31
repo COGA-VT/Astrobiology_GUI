@@ -328,7 +328,7 @@ with tab4:
                      options=['Classifier',
                               'Regression'])
 
-        if options_sup == 'Regression':
+        if options_sup == 'Classification':
             reg_alorigthm = st.selectbox(label = 'Choose Regression Algorithm',
                                   options = ['algorithm 1',
                                             'algorithm 2',
