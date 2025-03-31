@@ -323,9 +323,17 @@ with tab4:
                               placeholder = 'Choose Option'
                               )
 
+## Grant will work on this section ##
         options_sup = st.selectbox(label='Select Prediction Type',
                      options=['Classifier',
                               'Regression'])
+
+        if options_sup == 'Classification':
+            reg_alorigthm = st.selectbox(label = 'Choose Regression Algorithm',
+                                  options = ['algorithm 1',
+                                            'algorithm 2',
+                                            'algorithm 3']
+                                  )
 
     # with col2:
 
