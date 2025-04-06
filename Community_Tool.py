@@ -325,15 +325,43 @@ with tab4:
 
 ## Grant will work on this section ##
         options_sup = st.selectbox(label='Select Prediction Type',
-                     options=['Classifier',
+                     options=['Classification',
                               'Regression'])
 
         if options_sup == 'Classification':
-            class_alorigthm = st.selectbox(label = 'Choose Classification Algorithm',
-                                  options = ['algorithm 1',
+            class_algorithim = st.selectbox(label = 'Choose Classification Algorithm',
+                                  options = ['Support Vector Machine (SVM)',
                                             'algorithm 2',
                                             'algorithm 3']
                                   )
+            if class_algorithim == 'Support Vector Machine (SVM)':
+                X = X[elements]
+                y = y[target]
+
+                c_value = st.number_input('Input C Value',
+                                          min_value=0)
+
+                kernel_type = st.selectbox('Select a kernel',
+                                           ('linear', 'poly', 'rbf'),
+                                           index=None)
+                st.write('You selected:', kernel_type)
+
+                #Sets degree to a default value in case kernel_type isnt polynomial and thus degree isn't declared
+                degree=3
+                if kernel_type == 'poly':
+                    degree = st.number_input('Enter a degree', min_value=0)
+
+                svm = svm.SVC(C = c_value,
+                              kernel = kernel_type,
+                              degree = degree)
+
+                #CHECK IF fit or fit_transform
+                svm_result = svm.fit(X)
+
+
+
+
+
 
     # with col2:
 
