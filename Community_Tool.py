@@ -66,7 +66,7 @@ with tab2:
 
     st.divider()
     # Access and Download Example Data
-    st.subheader('If you do not have data of your own, use the follwing link to access available training sets from NASA AI Astrobiology')
+    st.subheader('If you do not have data of your own, use the following link to access available training sets from NASA AI Astrobiology')
     st.link_button('Go to NASA AI Astrobiology', 'https://ahed.nasa.gov/')
 
 with tab3:
