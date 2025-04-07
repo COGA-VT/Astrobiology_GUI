@@ -324,6 +324,7 @@ with tab4:
                               )
 
 ## Grant will work on this section ##
+        #TODO: Make it so that an error message appears when no data file is uploaded
         options_sup = st.selectbox(label='Select Prediction Type',
                      options=['Classification',
                               'Regression'])
@@ -335,28 +336,35 @@ with tab4:
                                             'algorithm 3']
                                   )
             if class_algorithim == 'Support Vector Machine (SVM)':
-                X = X[elements]
-                y = y[target]
+                X = data[elements]
+                y = data[target]
 
-                c_value = st.number_input('Input C Value',
-                                          min_value=0)
+                c_value = st.number_input('Input C Value', min_value=0.0,
+                                          value = 1.0,
+                                          step = 0.01,
+                                          format = "%.2f",)
+
 
                 kernel_type = st.selectbox('Select a kernel',
                                            ('linear', 'poly', 'rbf'),
-                                           index=None)
+                                           index=0)
                 st.write('You selected:', kernel_type)
 
-                #Sets degree to a default value in case kernel_type isnt polynomial and thus degree isn't declared
+                #Sets degree to a default value in case kernel_type isn't polynomial and thus degree isn't declared
                 degree=3
                 if kernel_type == 'poly':
                     degree = st.number_input('Enter a degree', min_value=0)
 
+
+                #creates svm model using inputted values
                 svm = svm.SVC(C = c_value,
                               kernel = kernel_type,
                               degree = degree)
 
-                #CHECK IF fit or fit_transform
-                svm_result = svm.fit(X)
+                #TODO check if its transform fit or just fit
+                svm_result = svm.fit(X,y)
+
+
 
 
 
