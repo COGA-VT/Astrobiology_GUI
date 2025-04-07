@@ -332,7 +332,7 @@ with tab4:
         if options_sup == 'Classification':
             class_algorithim = st.selectbox(label = 'Choose Classification Algorithm',
                                   options = ['Support Vector Machine (SVM)',
-                                            'algorithm 2',
+                                            'k-Nearest Neighbors (k-NN)',
                                             'algorithm 3']
                                   )
             if class_algorithim == 'Support Vector Machine (SVM)':
@@ -356,6 +356,12 @@ with tab4:
                     degree = st.number_input('Enter a degree', min_value=0)
 
 
+                #advanced_settings = st.checkbox('Enable advanced settings', value = False,)
+
+                #if advanced_settings:
+                    #TODO Can add additional advanced settings
+
+
                 #creates svm model using inputted values
                 svm = svm.SVC(C = c_value,
                               kernel = kernel_type,
@@ -363,6 +369,18 @@ with tab4:
 
                 #TODO check if its transform fit or just fit
                 svm_result = svm.fit(X,y)
+
+
+
+
+            #TODO Finish implementation of k-NN
+            elif class_algorithim == 'k-Nearest Neighbors (k-NN)':
+
+                k_value = st.number_input('Input k value.', min_value = 1, value = 1,)
+
+                knn = KNeighborsClassifier(n_neighbors=k_value)
+
+
 
 
 
