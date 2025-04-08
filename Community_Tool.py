@@ -318,6 +318,7 @@ with tab4:
         y_sup = data
         y_sup = y_sup.dropna()
 
+        #TODO: Change to mutliselect?
         target_sup = st.selectbox('Choose Target',
                               options = y_sup.columns,
                               placeholder = 'Choose Option'
@@ -339,6 +340,7 @@ with tab4:
                 X = data[elements]
                 y = data[target]
 
+                #TODO: Figure out how many decimal places the c_values should accept
                 c_value = st.number_input('Input C Value', min_value=0.0,
                                           value = 1.0,
                                           step = 0.01,
@@ -346,13 +348,13 @@ with tab4:
 
 
                 kernel_type = st.selectbox('Select a kernel',
-                                           ('linear', 'poly', 'rbf'),
+                                           ('Linear', 'Polynomial', 'Radial Basis Function'),
                                            index=0)
                 st.write('You selected:', kernel_type)
 
                 #Sets degree to a default value in case kernel_type isn't polynomial and thus degree isn't declared
                 degree=3
-                if kernel_type == 'poly':
+                if kernel_type == 'Polynomial':
                     degree = st.number_input('Enter a degree', min_value=0)
 
 
@@ -362,7 +364,15 @@ with tab4:
                     #TODO Can add additional advanced settings
 
 
-                #creates svm model using inputted values
+                #changes the kernel_type var to a valid value for the svm function
+                if kernel_type == 'Linear':
+                    kernel_type = 'linear'
+                elif kernel_type == 'Polynomial':
+                    kernel_type = 'poly'
+                else:
+                    kernel_type = 'rbf'
+
+                # creates svm model using inputted values
                 svm = svm.SVC(C = c_value,
                               kernel = kernel_type,
                               degree = degree)
