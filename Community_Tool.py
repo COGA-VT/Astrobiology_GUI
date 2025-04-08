@@ -66,7 +66,7 @@ with tab2:
 
     st.divider()
     # Access and Download Example Data
-    st.subheader('If you do not have data of your own, use the follwing link to access available training sets from NASA AI Astrobiology')
+    st.subheader('If you do not have data of your own, use the following link to access available training sets from NASA AI Astrobiology')
     st.link_button('Go to NASA AI Astrobiology', 'https://ahed.nasa.gov/')
 
 with tab3:
@@ -324,16 +324,70 @@ with tab4:
                               )
 
 ## Grant will work on this section ##
+        #TODO: Make it so that an error message appears when no data file is uploaded
         options_sup = st.selectbox(label='Select Prediction Type',
-                     options=['Classifier',
+                     options=['Classification',
                               'Regression'])
 
         if options_sup == 'Classification':
-            reg_alorigthm = st.selectbox(label = 'Choose Regression Algorithm',
-                                  options = ['algorithm 1',
-                                            'algorithm 2',
+            class_algorithim = st.selectbox(label = 'Choose Classification Algorithm',
+                                  options = ['Support Vector Machine (SVM)',
+                                            'k-Nearest Neighbors (k-NN)',
                                             'algorithm 3']
                                   )
+            if class_algorithim == 'Support Vector Machine (SVM)':
+                X = data[elements]
+                y = data[target]
+
+                c_value = st.number_input('Input C Value', min_value=0.0,
+                                          value = 1.0,
+                                          step = 0.01,
+                                          format = "%.2f",)
+
+
+                kernel_type = st.selectbox('Select a kernel',
+                                           ('linear', 'poly', 'rbf'),
+                                           index=0)
+                st.write('You selected:', kernel_type)
+
+                #Sets degree to a default value in case kernel_type isn't polynomial and thus degree isn't declared
+                degree=3
+                if kernel_type == 'poly':
+                    degree = st.number_input('Enter a degree', min_value=0)
+
+
+                #advanced_settings = st.checkbox('Enable advanced settings', value = False,)
+
+                #if advanced_settings:
+                    #TODO Can add additional advanced settings
+
+
+                #creates svm model using inputted values
+                svm = svm.SVC(C = c_value,
+                              kernel = kernel_type,
+                              degree = degree)
+
+                #TODO check if its transform fit or just fit
+                svm_result = svm.fit(X,y)
+
+
+
+
+            #TODO Finish implementation of k-NN
+            elif class_algorithim == 'k-Nearest Neighbors (k-NN)':
+
+                k_value = st.number_input('Input k value.', min_value = 1, value = 1,)
+
+                knn = KNeighborsClassifier(n_neighbors=k_value)
+
+
+
+
+
+
+
+
+
 
     # with col2:
 
