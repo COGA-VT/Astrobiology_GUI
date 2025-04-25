@@ -307,6 +307,7 @@ with tab4:
         st.subheader('**Here, the user can employ regression and classification methods.**')
         st.divider()
 
+
         # Remove Columns that are Strings
         X_sup = data.select_dtypes(include=['int64', 'float64'])
 
@@ -346,13 +347,16 @@ with tab4:
 
 
         #BEGIN TRAIN TEST SPLIT SECTION
+
+        X_sup = X_sup[elements_sup]
+        y_sup = y_sup[target_sup]
         st.subheader('Train Test Split: ')
         train_proportion = st.number_input('Enter the proportion of data to be allocated to training.',
                                            min_value=0.0,
                                            value = 0.75,
                                            step = 0.01,
                                            format = "%.2f")
-        X_train, X_test, y_train, y_test = train_test_split(X,y, train_size=train_proportion)
+        X_train, X_test, y_train, y_test = train_test_split(X_sup,y_sup, train_size=train_proportion)
 
         st.divider()
         #END TRAIN TEST SPLIT SECTION
@@ -365,8 +369,6 @@ with tab4:
                                                      'algorithm 3']
                                             )
             if class_algorithim == 'Support Vector Machine (SVM)':
-                X = data[elements_sup]
-                y = data[target_sup]
                 #Sets degree to a default value in case kernel_type isn't polynomial and thus degree isn't declared
                 degree = 3
 
@@ -426,6 +428,60 @@ with tab4:
     #BEGIN MODEL METRICS SECTION
     with col2:
 
+
+        st.header("Model Performance Metrics")
+
+        #BEGIN CLASSIFICATION REPORT CODE
+        st.subheader("Classification Report:")
+
+        y_predictions = selected_model.predict(X_test)
+
+
+        class_report = classification_report(y_test, y_predictions, output_dict=False)
+        st.text(class_report)
+
+
+        #END CLASSIFICATION REPORT CODE
+
+
+        #BEGIN CONFUSION MATRIX CODE
+
+        #Creates confusion matrix
+        conf_mat = confusion_matrix(y_test, y_predictions)
+
+        #Makes a new section for the confusion matrix figure
+        st.subheader("Confusion Matrix:")
+
+        #Makes labels with number of each outcome
+        conf_mat_labels = [
+            f'True Negative\n{conf_mat[0, 0]}',
+            f'False Positive\n{conf_mat[0, 1]}',
+            f'False Negative\n{conf_mat[1, 0]}',
+            f'True Positive\n{conf_mat[1, 1]}'
+        ]
+
+        #gets rid of imperfections in the figure
+        plt.close('all')
+
+        #reshapes labels to 2x2 for confusion matrix labelling
+        conf_mat_labels = np.asarray(conf_mat_labels).reshape(2,2)
+
+        #creates the figure with the labels and using a purple color scheme
+        conf_mat_fig = sns.heatmap(conf_mat,
+                                   annot=conf_mat_labels,
+                                   fmt = '',
+                                   cmap='Purples',
+                                   cbar = True)
+
+        #shows the figure in streamlit
+        st.pyplot(conf_mat_fig.get_figure())
+
+        #END CONFUSION MATRIX CODE
+
+
+        #BEGIN PREDICTION UPLOAD CODE
+        st.divider()
+
         #Reads in data file that user wants predictions on
         predicting_data_file = st.file_uploader('Upload a file with values to be predicted.')
 
@@ -436,32 +492,9 @@ with tab4:
             predicting_data = load_data(predicting_data_file, 10000)
             data_load_state2.text('Done!')
 
-
-        st.divider()
-        st.header("Model Performance Metrics")
-
-        #BEGIN CLASSIFICATION REPORT CODE
-        st.subheader("Classification Report:")
-
-        y_predictions = selected_model.predict(X_test)
-    #model.classes for labels
-        class_report = classification_report(y_test, y_predictions, output_dict=True)
-        st.text(class_report)
-        class_report = pd.DataFrame(class_report)
-        class_report_fig = sns.heatmap(class_report)
+        #END PREDICTION UPLOAD CODE
 
 
-        st.pyplot(class_report_fig.get_figure())
-        st.divider()
-        #END CLASSIFICATION REPORT CODE
-
-        #BEGIN CONFUSION MATRIX CODE
-        st.subheader("Confusion Matrix:")
-        conf_mat = confusion_matrix(y_test, y_predictions)
-        st.text(conf_mat)
-        conf_mat_fig = sns.heatmap(conf_mat)
-        st.pyplot(conf_mat_fig.get_figure())
-        #END CONFUSION MATRIX CODE
 
 
 
