@@ -346,11 +346,9 @@ with tab4:
                                             'Regression'])
 
 
-        #BEGIN TRAIN TEST SPLIT SECTION
-
+        #BEGIN TRAIN TEST SPLIT SECTION -------------------------------------------------------------------
         X_sup = X_sup[elements_sup]
         y_sup = y_sup[target_sup]
-        st.subheader('Train Test Split: ')
         train_proportion = st.number_input('Enter the proportion of data to be allocated to training.',
                                            min_value=0.0,
                                            value = 0.75,
@@ -359,14 +357,14 @@ with tab4:
         X_train, X_test, y_train, y_test = train_test_split(X_sup,y_sup, train_size=train_proportion)
 
         st.divider()
-        #END TRAIN TEST SPLIT SECTION
+        #END TRAIN TEST SPLIT SECTION ---------------------------------------------------------------------
 
-        #BEGIN MODEL SELECTION SECTION
+        #BEGIN MODEL SELECTION SECTION --------------------------------------------------------------------
         if options_sup == 'Classification':
             class_algorithim = st.selectbox(label='Choose Classification Algorithm',
                                             options=['Support Vector Machine (SVM)',
                                                      'k-Nearest Neighbors (k-NN)',
-                                                     'algorithm 3']
+                                                     'Random Forest Classifier']
                                             )
             if class_algorithim == 'Support Vector Machine (SVM)':
                 #Sets degree to a default value in case kernel_type isn't polynomial and thus degree isn't declared
@@ -403,54 +401,63 @@ with tab4:
                     kernel_type = 'rbf'
 
                 # creates svm model using inputted values
-                support_vector_machine = svm.SVC(C=c_value,
-                                                 kernel=kernel_type,
-                                                 degree=degree)
-
-                selected_model = support_vector_machine
+                selected_model = svm.SVC(C=c_value,
+                                         kernel=kernel_type,
+                                         degree=degree)
 
 
-            #TODO Finish implementation of k-NN
+
+
             elif class_algorithim == 'k-Nearest Neighbors (k-NN)':
 
-                k_value = st.number_input('Input k value.', min_value=1, value=1, )
+                k_value = st.number_input('Input k value.',
+                                          min_value=1,
+                                          value=1 )
 
                 knn = KNeighborsClassifier(n_neighbors=k_value)
                 selected_model = knn
+
+            elif class_algorithim == 'Random Forest Classifier':
+
+                #TODO: Add the rest of the parameters
+                num_estimators = st.number_input('Enter the number of estimators.',
+                                                 min_value = 1,
+                                                 value = 100)
+
+
+                selected_model = RandomForestClassifier(n_estimators=num_estimators)
 
 
             #fits the selected model to the training data obtained from train_test_split
             selected_model.fit(X_train, y_train)
 
+    #END MODEL SELECTION SECTION ------------------------------------------------------------------
 
-    #TODO: Check for common variable in Unsupervised section
-    #TODO: Move prediction data below metrics
+
     #BEGIN MODEL METRICS SECTION
     with col2:
 
-
-        st.header("Model Performance Metrics")
-
-        #BEGIN CLASSIFICATION REPORT CODE
-        st.subheader("Classification Report:")
-
+        #makes predictions on test data
         y_predictions = selected_model.predict(X_test)
 
+        #check box for showing model metrics
+        show_metrics_enabled = st.checkbox("Show Model Metrics")
+
+        if show_metrics_enabled:
+            st.header("Model Performance Metrics")
+
+        #BEGIN CLASSIFICATION REPORT CODE --------------------------------------------------------
 
         class_report = classification_report(y_test, y_predictions, output_dict=False)
-        st.text(class_report)
 
+        if show_metrics_enabled:
+            st.subheader("Classification Report:")
+            st.text(class_report)
+        #END CLASSIFICATION REPORT CODE -----------------------------------------------------------
 
-        #END CLASSIFICATION REPORT CODE
-
-
-        #BEGIN CONFUSION MATRIX CODE
-
+        #BEGIN CONFUSION MATRIX CODE --------------------------------------------------------------
         #Creates confusion matrix
         conf_mat = confusion_matrix(y_test, y_predictions)
-
-        #Makes a new section for the confusion matrix figure
-        st.subheader("Confusion Matrix:")
 
         #Makes labels with number of each outcome
         conf_mat_labels = [
@@ -466,21 +473,23 @@ with tab4:
         #reshapes labels to 2x2 for confusion matrix labelling
         conf_mat_labels = np.asarray(conf_mat_labels).reshape(2,2)
 
-        #creates the figure with the labels and using a purple color scheme
+        #creates the figure
         conf_mat_fig = sns.heatmap(conf_mat,
                                    annot=conf_mat_labels,
                                    fmt = '',
                                    cmap='Purples',
                                    cbar = True)
 
-        #shows the figure in streamlit
-        st.pyplot(conf_mat_fig.get_figure())
+        #shows the figure in streamlit if the checkbox is enabled
+        if show_metrics_enabled:
+            #Makes a new section for the confusion matrix figure
+            st.subheader("Confusion Matrix:")
+            st.pyplot(conf_mat_fig.get_figure())
+            st.divider()
+        #END CONFUSION MATRIX CODE -----------------------------------------------------------------
 
-        #END CONFUSION MATRIX CODE
+        #BEGIN PREDICTION UPLOAD CODE --------------------------------------------------------------
 
-
-        #BEGIN PREDICTION UPLOAD CODE
-        st.divider()
 
         #Reads in data file that user wants predictions on
         predicting_data_file = st.file_uploader('Upload a file with values to be predicted.')
@@ -492,10 +501,4 @@ with tab4:
             predicting_data = load_data(predicting_data_file, 10000)
             data_load_state2.text('Done!')
 
-        #END PREDICTION UPLOAD CODE
-
-
-
-
-
-
+        #END PREDICTION UPLOAD CODE ---------------------------------------------------------------
