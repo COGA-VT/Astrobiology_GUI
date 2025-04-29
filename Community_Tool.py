@@ -20,12 +20,10 @@ from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split, cross_val_score, RepeatedStratifiedKFold
 from sklearn.ensemble import VotingClassifier
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, RocCurveDisplay, \
-    ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, RocCurveDisplay, ConfusionMatrixDisplay
 from sklearn.manifold import TSNE
 from imblearn.over_sampling import SMOTE
 from sklearn.multiclass import OneVsRestClassifier
-
 
 # Set Layout of the Application
 st.set_page_config(layout="wide")
@@ -36,18 +34,16 @@ tab1, tab2, tab3, tab4 = st.tabs(["About",
                                   "Data and Preprocessing",
                                   "Unsupervised Learning",
                                   "Supervised Learning"]
-                                 )
+                           )
 
 with tab1:
-    st.markdown(
-        "This application is designed to allow astrobiologists to experiment with machine learning approaches including unsupervised and "
-        "supervised methods using their own data."
-        " This application will be especially useful for those who may be interested in applying machine learning but either don't know "
-        "where to start or do not have the time to learn programming languages.")
+    st.markdown("This application is designed to allow astrobiologists to experiment with machine learning approaches including unsupervised and "
+                "supervised methods using their own data."
+                " This application will be especially useful for those who may be interested in applying machine learning but either don't know "
+                "where to start or do not have the time to learn programming languages.")
 
-    st.markdown('Developed by Floyd Nichols and Grant Major')
-    st.markdown('email: floydnichols@vt.edu\n\n'
-                'email: grantmajor@vt.edu')
+    st.markdown('Developed by Floyd Nichols')
+    st.markdown('email: floydnichols@vt.edu')
 
 with tab2:
     st.subheader("Upload a Data File")
@@ -56,13 +52,12 @@ with tab2:
     if uploaded_file is None:
         st.error('Need to upload a file')
     else:
-        def load_data(data_file, nrows):
-            data = pd.read_csv(data_file, nrows=nrows)
-            return data
-
+        def load_data(nrows):
+         data = pd.read_csv(uploaded_file, nrows=nrows)
+         return data
 
         data_load_state = st.text('Loading data...')
-        data = load_data(uploaded_file, 10000)
+        data = load_data(10000)
         data_load_state.text("Done!")
 
         if st.checkbox('Show Data'):
@@ -71,12 +66,11 @@ with tab2:
 
     st.divider()
     # Access and Download Example Data
-    st.subheader(
-        'If you do not have data of your own, use the following link to access available training sets from NASA AI Astrobiology')
+    st.subheader('If you do not have data of your own, use the follwing link to access available training sets from NASA AI Astrobiology')
     st.link_button('Go to NASA AI Astrobiology', 'https://ahed.nasa.gov/')
 
 with tab3:
-    col1, col2 = st.columns([1, 1])
+    col1, col2 = st.columns([1,1])
 
     # Test code to make sure that a data file is uploaded before continuing
     try:
@@ -99,20 +93,20 @@ with tab3:
         X = X.dropna()
 
         elements = st.multiselect("Select Explanatory Variables (default is all numerical columns):",
-                                  X.columns,
-                                  default=X.columns
-                                  )
+                                X.columns,
+                                default = X.columns
+                                )
 
         y = data
         y = y.dropna()
 
         target = st.selectbox('Choose Target',
-                              options=y.columns,
+                              options = y.columns,
                               )
 
         options = st.selectbox(label='Select Dimensionality Reduction Method',
-                               options=['Standard PCA',
-                                        't-SNE'])
+                     options=['Standard PCA',
+                              't-SNE'])
 
         # t-SNE Construction
         st.divider()
@@ -126,35 +120,35 @@ with tab3:
             y = y[target]
 
             n_components = st.number_input('Insert Number of Components',
-                                           min_value=2
-                                           )
+                                            min_value=2
+                                                )
             perplexity = st.number_input('Insert Perplexity',
-                                         min_value=2
-                                         )
+                                            min_value=2
+                                                )
             tsne = TSNE(n_components,
-                        random_state=42,
+                        random_state = 42,
                         perplexity=perplexity,
                         n_jobs=-1,
                         method='exact',
                         max_iter=5000
                         )
             tsne_result = tsne.fit_transform(X)
-            tsne_result_df = pd.DataFrame({'tsne_1': tsne_result[:, 0],
-                                           'tsne_2': tsne_result[:, 1]}
-                                          )
+            tsne_result_df = pd.DataFrame({'tsne_1': tsne_result[:,0],
+                                            'tsne_2': tsne_result[:,1]}
+                                        )
 
             # DBSCAN
             st.divider()
             clusters = st.selectbox(label='Select Cluster Method',
-                                    options=['Kmeans',
-                                             'DBSCAN',
-                                             'Target'])
+                                   options=['Kmeans',
+                                            'DBSCAN',
+                                            'Target'])
 
             if clusters == 'Kmeans':
                 st.subheader('Define K-means Parameters')
                 n_clusters = st.number_input('Enter Number of Clusters',
-                                             min_value=2
-                                             )
+                                      min_value=2
+                                      )
 
                 X_Kmeans = KMeans(n_clusters=n_clusters).fit(tsne_result)
                 labels = X_Kmeans.labels_
@@ -162,11 +156,11 @@ with tab3:
             elif clusters == 'DBSCAN':
                 st.subheader('Define DBSCAN Parameters')
                 eps = st.number_input('Enter Eps',
-                                      min_value=0.5
-                                      )
+                                        min_value=0.5
+                                            )
                 min_samples = st.number_input('Enter Minimum Samples',
-                                              min_value=1
-                                              )
+                                                min_value=1
+                                                    )
 
                 X_DBSCAN = DBSCAN(eps=eps, min_samples=min_samples).fit(tsne_result)
                 DBSCAN_labels = X_DBSCAN.labels_
@@ -181,11 +175,11 @@ with tab3:
                 st.subheader('t-Distributed Stochastic Neighbor Embedding')
                 fig, ax = plt.subplots()
                 fig = px.scatter(tsne_result_df,
-                                 x='tsne_1',
-                                 y='tsne_2',
-                                 color=labels,
-                                 title=options
-                                 )
+                                x='tsne_1',
+                                y='tsne_2',
+                                color = labels,
+                                title=options
+                            )
                 fig.update_traces(
                     marker=dict(size=8,
                                 line=dict(width=2,
@@ -196,9 +190,9 @@ with tab3:
                 ax.set_ylabel('t-SNE 2')
                 ax.set_aspect('auto')
                 ax.legend('Cluster',
-                          bbox_to_anchor=(0.8, 0.95),
-                          loc=2,
-                          borderaxespad=0.0)
+                            bbox_to_anchor=(0.8, 0.95),
+                            loc=2,
+                            borderaxespad=0.0)
                 st.plotly_chart(fig, use_container_width=True)
 
         else:
@@ -207,8 +201,8 @@ with tab3:
             y = y[target]
 
             n_components = st.number_input('Insert Number of Components',
-                                           min_value=2
-                                           )
+                                         min_value=2
+                                        )
 
             pca = PCA(n_components=n_components)
             pipe = Pipeline([('scaler', StandardScaler()),
@@ -279,20 +273,20 @@ with tab3:
                 fig, ax = plt.subplots()
                 exp_var_pca = pca.explained_variance_ratio_
                 fig = px.bar(exp_var_pca,
-                             x=range(0, len(exp_var_pca)),
-                             y=exp_var_pca,
-                             title='PCA Explained Variance Ratio')
+                                 x=range(0, len(exp_var_pca)),
+                                 y=exp_var_pca,
+                                 title='PCA Explained Variance Ratio')
 
                 fig.update_traces(
-                    marker=dict(color='grey',
-                                line=dict(width=3,
-                                          color='Black')
-                                )
-                )
+                    marker=dict(color = 'grey',
+                                              line=dict(width=3,
+                                                        color='Black')
+                                              )
+                                  )
 
                 fig.update_layout(
-                    xaxis_title='Principal Component Index',
-                    yaxis_title='Explained Variance Ratio'
+                    xaxis_title = 'Principal Component Index',
+                    yaxis_title = 'Explained Variance Ratio'
                 )
                 ax.set_aspect('auto')
                 ax.legend(bbox_to_anchor=(0.8, 0.95),
@@ -307,7 +301,6 @@ with tab4:
         st.subheader('**Here, the user can employ regression and classification methods.**')
         st.divider()
 
-
         # Remove Columns that are Strings
         X_sup = data.select_dtypes(include=['int64', 'float64'])
 
@@ -317,188 +310,30 @@ with tab4:
         X_sup = X.dropna()
 
         elements_sup = st.multiselect("Select Explanatory Variables (default is all numerical columns):",
-                                      X_sup.columns,
-                                      placeholder='Choose Option',
-                                      default = X_sup.columns,
-                                      )
+                                X_sup.columns,
+                                placeholder = 'Choose Option',
+                                # default = X_sup.columns,
+                                )
 
         y_sup = data
         y_sup = y_sup.dropna()
 
-        #TODO: Make it so that the last column is the target variable automatically
         target_sup = st.selectbox('Choose Target',
-                                  options=y_sup.columns,
-                                  placeholder='Choose Option'
+                              options = y_sup.columns,
+                              placeholder = 'Choose Option'
+                              )
+
+## Grant will work on this section ##
+        options_sup = st.selectbox(label='Select Prediction Type',
+                     options=['Classifier',
+                              'Regression'])
+
+        if options_sup == 'Classification':
+            reg_alorigthm = st.selectbox(label = 'Choose Regression Algorithm',
+                                  options = ['algorithm 1',
+                                            'algorithm 2',
+                                            'algorithm 3']
                                   )
 
-        ## Grant will work on this section ##
-        #TODO: Make it so that an error message appears when no data file is uploaded
+    # with col2:
 
-        #CLASSIFICATION CODE: ------------------------------------------------------------------------------------------
-
-        #setting variable to None to prevent errors from undeclared variables:
-        class_algorithim = None
-        X_predictions = None
-        predicting_data = None
-
-        options_sup = st.selectbox(label='Select Prediction Type',
-                                   options=['Classification',
-                                            'Regression'])
-
-
-        #BEGIN TRAIN TEST SPLIT SECTION -------------------------------------------------------------------
-        X_sup = X_sup[elements_sup]
-        y_sup = y_sup[target_sup]
-        train_proportion = st.number_input('Enter the proportion of data to be allocated to training.',
-                                           min_value=0.0,
-                                           value = 0.75,
-                                           step = 0.01,
-                                           format = "%.2f")
-        X_train, X_test, y_train, y_test = train_test_split(X_sup,y_sup, train_size=train_proportion)
-
-        st.divider()
-        #END TRAIN TEST SPLIT SECTION ---------------------------------------------------------------------
-
-        #BEGIN MODEL SELECTION SECTION --------------------------------------------------------------------
-        if options_sup == 'Classification':
-            class_algorithim = st.selectbox(label='Choose Classification Algorithm',
-                                            options=['Support Vector Machine (SVM)',
-                                                     'k-Nearest Neighbors (k-NN)',
-                                                     'Random Forest Classifier']
-                                            )
-            if class_algorithim == 'Support Vector Machine (SVM)':
-                #Sets degree to a default value in case kernel_type isn't polynomial and thus degree isn't declared
-                degree = 3
-
-                #Selecting C value hyperparameter
-                c_value = st.number_input('Input C Value', min_value=0.0,
-                                          value=1.0,
-                                          step=0.01,
-                                          format="%.2f")
-
-                #Selecting Kernel hyperparameter
-                kernel_type = st.selectbox('Select a kernel',
-                                           ('Linear', 'Polynomial', 'Radial Basis Function'),
-                                           index=0)
-                st.write('You selected:', kernel_type)
-
-                #Selecting Degree hyperparameter
-                if kernel_type == 'Polynomial':
-                    degree = st.number_input('Enter a degree', min_value=0)
-
-
-                #TODO Can add additional advanced settings
-                #advanced_settings = st.checkbox('Enable advanced settings', value = False,)
-                #if advanced_settings:
-
-
-                #changes the kernel_type var to a valid value for the svm function
-                if kernel_type == 'Linear':
-                    kernel_type = 'linear'
-                elif kernel_type == 'Polynomial':
-                    kernel_type = 'poly'
-                else:
-                    kernel_type = 'rbf'
-
-                # creates svm model using inputted values
-                selected_model = svm.SVC(C=c_value,
-                                         kernel=kernel_type,
-                                         degree=degree)
-
-
-
-
-            elif class_algorithim == 'k-Nearest Neighbors (k-NN)':
-
-                k_value = st.number_input('Input k value.',
-                                          min_value=1,
-                                          value=1 )
-
-                knn = KNeighborsClassifier(n_neighbors=k_value)
-                selected_model = knn
-
-            elif class_algorithim == 'Random Forest Classifier':
-
-                #TODO: Add the rest of the parameters
-                num_estimators = st.number_input('Enter the number of estimators.',
-                                                 min_value = 1,
-                                                 value = 100)
-
-
-                selected_model = RandomForestClassifier(n_estimators=num_estimators)
-
-
-            #fits the selected model to the training data obtained from train_test_split
-            selected_model.fit(X_train, y_train)
-
-    #END MODEL SELECTION SECTION ------------------------------------------------------------------
-
-
-    #BEGIN MODEL METRICS SECTION
-    with col2:
-
-        #makes predictions on test data
-        y_predictions = selected_model.predict(X_test)
-
-        #check box for showing model metrics
-        show_metrics_enabled = st.checkbox("Show Model Metrics")
-
-        if show_metrics_enabled:
-            st.header("Model Performance Metrics")
-
-        #BEGIN CLASSIFICATION REPORT CODE --------------------------------------------------------
-
-        class_report = classification_report(y_test, y_predictions, output_dict=False)
-
-        if show_metrics_enabled:
-            st.subheader("Classification Report:")
-            st.text(class_report)
-        #END CLASSIFICATION REPORT CODE -----------------------------------------------------------
-
-        #BEGIN CONFUSION MATRIX CODE --------------------------------------------------------------
-        #Creates confusion matrix
-        conf_mat = confusion_matrix(y_test, y_predictions)
-
-        #Makes labels with number of each outcome
-        conf_mat_labels = [
-            f'True Negative\n{conf_mat[0, 0]}',
-            f'False Positive\n{conf_mat[0, 1]}',
-            f'False Negative\n{conf_mat[1, 0]}',
-            f'True Positive\n{conf_mat[1, 1]}'
-        ]
-
-        #gets rid of imperfections in the figure
-        plt.close('all')
-
-        #reshapes labels to 2x2 for confusion matrix labelling
-        conf_mat_labels = np.asarray(conf_mat_labels).reshape(2,2)
-
-        #creates the figure
-        conf_mat_fig = sns.heatmap(conf_mat,
-                                   annot=conf_mat_labels,
-                                   fmt = '',
-                                   cmap='Purples',
-                                   cbar = True)
-
-        #shows the figure in streamlit if the checkbox is enabled
-        if show_metrics_enabled:
-            #Makes a new section for the confusion matrix figure
-            st.subheader("Confusion Matrix:")
-            st.pyplot(conf_mat_fig.get_figure())
-            st.divider()
-        #END CONFUSION MATRIX CODE -----------------------------------------------------------------
-
-        #BEGIN PREDICTION UPLOAD CODE --------------------------------------------------------------
-
-
-        #Reads in data file that user wants predictions on
-        predicting_data_file = st.file_uploader('Upload a file with values to be predicted.')
-
-        if predicting_data_file is None:
-            st.error('Need to upload a prediction file.')
-        else:
-            data_load_state2 = st.text('Loading data....')
-            predicting_data = load_data(predicting_data_file, 10000)
-            data_load_state2.text('Done!')
-
-        #END PREDICTION UPLOAD CODE ---------------------------------------------------------------
