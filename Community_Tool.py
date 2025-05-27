@@ -424,13 +424,39 @@ with tab4:
 
             elif class_algorithim == 'Random Forest Classifier':
 
-                #TODO: Add the rest of the parameters
                 num_estimators = st.number_input('Enter the number of estimators.',
                                                  min_value = 1,
+                                                 step = 1,
                                                  value = 100)
 
+                selected_criterion = st.selectbox('Select a criterion',
+                                                  ('Gini', 'Entropy', ' Log Loss'))
+                if selected_criterion == "Log Loss":
+                    selected_criterion="log_loss"
 
-                selected_model = RandomForestClassifier(n_estimators=num_estimators)
+                enable_tree_depth = st.checkbox('Enable tree depth parameter',
+                                                value = False)
+
+
+                num_min_samples_split = st.number_input("Enter the minimum number of samples required to split an internal node",
+                                                        min_value = 2,
+                                                        step = 1,
+                                                        value = 2)
+
+                if enable_tree_depth:
+                    tree_depth = st.number_input('Enter the maximum depth of each tree.',
+                                                 min_value = 1,
+                                                 step = 1)
+                    selected_model = RandomForestClassifier(n_estimators=num_estimators,
+                                                            criterion=selected_criterion.lower(),
+                                                            max_depth=tree_depth,
+                                                            min_samples_split=num_min_samples_split
+                                                            )
+                else:
+                    selected_model = RandomForestClassifier(n_estimators=num_estimators,
+                                                            criterion=selected_criterion.lower(),
+                                                            min_samples_split=num_min_samples_split
+                                                            )
 
 
             selected_model.fit(X_train, y_train)
@@ -440,27 +466,21 @@ with tab4:
 
     #BEGIN MODEL METRICS SECTION
     with col2:
-        #makes predictions on test data
         show_metrics_enabled = False
 
+        # check box for showing model metrics
         if not X_sup.empty:
             y_predictions = selected_model.predict(X_test)
             show_metrics_enabled = st.checkbox("Show Model Metrics")
         else:
             st.warning("Select explanatory variables to continue.")
 
-        #check box for showing model metrics
-
-
-
         if show_metrics_enabled:
             st.header("Model Performance Metrics")
 
+
         #BEGIN CLASSIFICATION REPORT CODE --------------------------------------------------------
-
             class_report = classification_report(y_test, y_predictions, output_dict=False)
-
-
 
         if show_metrics_enabled:
             st.subheader("Classification Report:")
@@ -468,8 +488,7 @@ with tab4:
         #END CLASSIFICATION REPORT CODE -----------------------------------------------------------
 
         #BEGIN CONFUSION MATRIX CODE --------------------------------------------------------------
-        #Creates confusion matrix
-      #  try:
+            #Creates confusion matrix
             conf_mat = confusion_matrix(y_test, y_predictions)
 
             #Makes labels with number of each outcome
@@ -492,8 +511,6 @@ with tab4:
                                        fmt = '',
                                        cmap='Purples',
                                        cbar = True)
-       # except ValueError as value_error:
-            #already an error message displayed, no need for redundant error to be printed.
 
         #shows the figure in streamlit if the checkbox is enabled
         if show_metrics_enabled:
@@ -503,9 +520,8 @@ with tab4:
             st.divider()
         #END CONFUSION MATRIX CODE -----------------------------------------------------------------
 
+
         #BEGIN PREDICTION UPLOAD CODE --------------------------------------------------------------
-
-
         #Reads in data file that user wants predictions on
         if not X_sup.empty:
             predicting_data_file = st.file_uploader('Upload a file with values to be predicted.')
