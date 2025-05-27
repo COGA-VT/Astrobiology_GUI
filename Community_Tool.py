@@ -341,14 +341,19 @@ with tab4:
         X_predictions = None
         predicting_data = None
 
+
+        X_sup = X_sup[elements_sup]
+        y_sup = y_sup[target_sup]
+
+        if target_sup in X_sup:
+            st.warning("Overlapping target and explanatory variables detected.")
+
+
         options_sup = st.selectbox(label='Select Prediction Type',
                                    options=['Classification',
                                             'Regression'])
 
-
         #BEGIN TRAIN TEST SPLIT SECTION -------------------------------------------------------------------
-        X_sup = X_sup[elements_sup]
-        y_sup = y_sup[target_sup]
         train_proportion = st.number_input('Enter the proportion of data to be allocated to training.',
                                            min_value=0.0,
                                            value = 0.75,
@@ -360,7 +365,7 @@ with tab4:
         #END TRAIN TEST SPLIT SECTION ---------------------------------------------------------------------
 
         #BEGIN MODEL SELECTION SECTION --------------------------------------------------------------------
-        if options_sup == 'Classification':
+        if options_sup == 'Classification' and not X_sup.empty:
             class_algorithim = st.selectbox(label='Choose Classification Algorithm',
                                             options=['Support Vector Machine (SVM)',
                                                      'k-Nearest Neighbors (k-NN)',
@@ -428,7 +433,6 @@ with tab4:
                 selected_model = RandomForestClassifier(n_estimators=num_estimators)
 
 
-            #fits the selected model to the training data obtained from train_test_split
             selected_model.fit(X_train, y_train)
 
     #END MODEL SELECTION SECTION ------------------------------------------------------------------
@@ -436,19 +440,27 @@ with tab4:
 
     #BEGIN MODEL METRICS SECTION
     with col2:
-
         #makes predictions on test data
-        y_predictions = selected_model.predict(X_test)
+        show_metrics_enabled = False
+
+        if not X_sup.empty:
+            y_predictions = selected_model.predict(X_test)
+            show_metrics_enabled = st.checkbox("Show Model Metrics")
+        else:
+            st.warning("Select explanatory variables to continue.")
 
         #check box for showing model metrics
-        show_metrics_enabled = st.checkbox("Show Model Metrics")
+
+
 
         if show_metrics_enabled:
             st.header("Model Performance Metrics")
 
         #BEGIN CLASSIFICATION REPORT CODE --------------------------------------------------------
 
-        class_report = classification_report(y_test, y_predictions, output_dict=False)
+            class_report = classification_report(y_test, y_predictions, output_dict=False)
+
+
 
         if show_metrics_enabled:
             st.subheader("Classification Report:")
@@ -457,28 +469,31 @@ with tab4:
 
         #BEGIN CONFUSION MATRIX CODE --------------------------------------------------------------
         #Creates confusion matrix
-        conf_mat = confusion_matrix(y_test, y_predictions)
+      #  try:
+            conf_mat = confusion_matrix(y_test, y_predictions)
 
-        #Makes labels with number of each outcome
-        conf_mat_labels = [
-            f'True Negative\n{conf_mat[0, 0]}',
-            f'False Positive\n{conf_mat[0, 1]}',
-            f'False Negative\n{conf_mat[1, 0]}',
-            f'True Positive\n{conf_mat[1, 1]}'
-        ]
+            #Makes labels with number of each outcome
+            conf_mat_labels = [
+                f'True Negative\n{conf_mat[0, 0]}',
+                f'False Positive\n{conf_mat[0, 1]}',
+                f'False Negative\n{conf_mat[1, 0]}',
+                f'True Positive\n{conf_mat[1, 1]}'
+            ]
 
-        #gets rid of imperfections in the figure
-        plt.close('all')
+            #gets rid of imperfections in the figure
+            plt.close('all')
 
-        #reshapes labels to 2x2 for confusion matrix labelling
-        conf_mat_labels = np.asarray(conf_mat_labels).reshape(2,2)
+            #reshapes labels to 2x2 for confusion matrix labelling
+            conf_mat_labels = np.asarray(conf_mat_labels).reshape(2,2)
 
-        #creates the figure
-        conf_mat_fig = sns.heatmap(conf_mat,
-                                   annot=conf_mat_labels,
-                                   fmt = '',
-                                   cmap='Purples',
-                                   cbar = True)
+            #creates the figure
+            conf_mat_fig = sns.heatmap(conf_mat,
+                                       annot=conf_mat_labels,
+                                       fmt = '',
+                                       cmap='Purples',
+                                       cbar = True)
+       # except ValueError as value_error:
+            #already an error message displayed, no need for redundant error to be printed.
 
         #shows the figure in streamlit if the checkbox is enabled
         if show_metrics_enabled:
@@ -492,13 +507,14 @@ with tab4:
 
 
         #Reads in data file that user wants predictions on
-        predicting_data_file = st.file_uploader('Upload a file with values to be predicted.')
+        if not X_sup.empty:
+            predicting_data_file = st.file_uploader('Upload a file with values to be predicted.')
 
-        if predicting_data_file is None:
-            st.error('Need to upload a prediction file.')
-        else:
-            data_load_state2 = st.text('Loading data....')
-            predicting_data = load_data(predicting_data_file, 10000)
-            data_load_state2.text('Done!')
+            if predicting_data_file is None:
+                st.error('Need to upload a prediction file.')
+            else:
+                data_load_state2 = st.text('Loading data....')
+                predicting_data = load_data(predicting_data_file, 10000)
+                data_load_state2.text('Done!')
 
         #END PREDICTION UPLOAD CODE ---------------------------------------------------------------
