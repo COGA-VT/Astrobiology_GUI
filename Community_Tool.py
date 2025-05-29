@@ -10,8 +10,10 @@ import plotly.express as px
 
 # Machine Learning Libraries and Modules
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.pipeline import Pipeline
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.linear_model import Ridge
 from sklearn import svm, metrics
 from sklearn.cluster import KMeans
 from sklearn.cluster import DBSCAN
@@ -25,7 +27,6 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 from sklearn.manifold import TSNE
 from imblearn.over_sampling import SMOTE
 from sklearn.multiclass import OneVsRestClassifier
-
 
 # Set Layout of the Application
 st.set_page_config(layout="wide")
@@ -307,7 +308,6 @@ with tab4:
         st.subheader('**Here, the user can employ regression and classification methods.**')
         st.divider()
 
-
         # Remove Columns that are Strings
         X_sup = data.select_dtypes(include=['int64', 'float64'])
 
@@ -319,7 +319,7 @@ with tab4:
         elements_sup = st.multiselect("Select Explanatory Variables (default is all numerical columns):",
                                       X_sup.columns,
                                       placeholder='Choose Option',
-                                      default = X_sup.columns,
+                                      default=X_sup.columns,
                                       )
 
         y_sup = data
@@ -331,66 +331,181 @@ with tab4:
                                   placeholder='Choose Option'
                                   )
 
-        ## Grant will work on this section ##
-        #TODO: Make it so that an error message appears when no data file is uploaded
-
-        #CLASSIFICATION CODE: ------------------------------------------------------------------------------------------
-
-        #setting variable to None to prevent errors from undeclared variables:
+        #setting variables to None to prevent errors from undeclared variables:
         class_algorithim = None
         X_predictions = None
         predicting_data = None
+
+        X_sup = X_sup[elements_sup]
+        y_sup = y_sup[target_sup]
+
+        if target_sup in X_sup:
+            st.warning("Overlapping target and explanatory variables detected.")
 
         options_sup = st.selectbox(label='Select Prediction Type',
                                    options=['Classification',
                                             'Regression'])
 
-
         #BEGIN TRAIN TEST SPLIT SECTION -------------------------------------------------------------------
-        X_sup = X_sup[elements_sup]
-        y_sup = y_sup[target_sup]
-        train_proportion = st.number_input('Enter the proportion of data to be allocated to training.',
+        train_proportion = st.number_input('Enter the Proportion of Data to be Allocated to Training.',
                                            min_value=0.0,
-                                           value = 0.75,
-                                           step = 0.01,
-                                           format = "%.2f")
-        X_train, X_test, y_train, y_test = train_test_split(X_sup,y_sup, train_size=train_proportion)
+                                           value=0.75,
+                                           step=0.01,
+                                           format="%.2f")
+        X_train, X_test, y_train, y_test = train_test_split(X_sup, y_sup, train_size=train_proportion)
 
         st.divider()
         #END TRAIN TEST SPLIT SECTION ---------------------------------------------------------------------
 
-        #BEGIN MODEL SELECTION SECTION --------------------------------------------------------------------
-        if options_sup == 'Classification':
+        #BEGIN REGRESSION CODE: ------------------------------------------------------------------------------------------
+        if options_sup == "Regression" and not X_sup.empty:
+            #set to 0 to prevent errors when non quantile loss function is chosen
+            quantile_value = 0
+            reg_algorithim = st.selectbox(label='Chose Regression Algorithm',
+                                          options=['Histogram-based Gradient Boosting Regressor Tree',
+                                                   'Random Forest Regressor',
+                                                   'Ridge Regressor'])
+
+            #BEGIN HISTGRADBOOST CODE ------------------------------------------------------------------------------------
+            if reg_algorithim == 'Histogram-based Gradient Boosting Regressor Tree':
+                loss_function = st.selectbox(label='Choose Loss Function',
+                                             options=['Squared Error',
+                                                      'Absolute Error',
+                                                      'Gamma',
+                                                      'Poisson',
+                                                      'Quantile'],
+                                             index=0)
+
+                if loss_function == 'Squared Error':
+                    loss_function = 'squared_error'
+                elif loss_function == 'Absolute Error':
+                    loss_function = 'absolute_error'
+                else:
+                    loss_function = loss_function.lower()
+
+                if loss_function == 'quantile':
+                    quantile_value = st.number_input(label='Enter Quantile Value',
+                                                     min_value=0.0,
+                                                     max_value=1.0,
+                                                     step=0.01,
+                                                     format='%.2f')
+
+                learn_rate = st.number_input(label='Enter Learning Rate',
+                                             min_value=0.0,
+                                             max_value=1.0,
+                                             step=0.01,
+                                             value=0.1,
+                                             format=
+                                             '%.2f')
+
+                max_num_iter = st.number_input(label='Enter Maximum Number of Iterations',
+                                               min_value=1,
+                                               step=1,
+                                               value=100)
+
+                max_leaf = st.number_input(label='Enter Maximum Number of Leaves for Each Tree',
+                                           min_value=2,
+                                           value=31,
+                                           step=1)
+
+                selected_model = HistGradientBoostingRegressor(loss=loss_function,
+                                                               quantile=quantile_value,
+                                                               learning_rate=learn_rate,
+                                                               max_iter=max_num_iter,
+                                                               max_leaf_nodes=max_leaf
+                                                               )
+
+            #END HISTGRADBOOST CODE ----------------------------------------------------------------------------------
+
+            #BEGIN RANDOM FOREST REGRESSOR CODE ----------------------------------------------------------------------
+            elif reg_algorithim == 'Random Forest Regressor':
+                num_estimators = st.number_input(label='Enter the number of estimators.',
+                                                 min_value=1,
+                                                 step=1,
+                                                 value=100)
+
+                selected_criterion = st.selectbox(label='Select a criterion',
+                                                  options=['Squared Error', 'Absolute Error', 'Friedman MSE',
+                                                           'Poisson'])
+
+                #casts the selected criterion into the correct format for scikit
+                if selected_criterion == 'Squared Error':
+                    selected_criterion = 'squared_error'
+                elif selected_criterion == 'Absolute Error':
+                    selected_criterion = 'absolute_error'
+                elif selected_criterion == 'Friedman MSE':
+                    selected_criterion = 'friedman_mse'
+                else:
+                    selected_criterion = selected_criterion.lower()
+
+                num_min_samples_split = st.number_input(
+                    "Enter the minimum number of samples required to split an internal node",
+                    min_value=2,
+                    step=1,
+                    value=2)
+
+                enable_tree_depth = st.checkbox('Enable tree depth parameter',
+                                                value=False)
+
+                if enable_tree_depth:
+                    tree_depth = st.number_input('Enter the maximum depth of each tree.',
+                                                 min_value=1,
+                                                 step=1)
+                    selected_model = RandomForestRegressor(n_estimators=num_estimators,
+                                                           criterion=selected_criterion,
+                                                           max_depth=tree_depth,
+                                                           min_samples_split=num_min_samples_split
+                                                            )
+                else:
+                    selected_model = RandomForestRegressor(n_estimators=num_estimators,
+                                                           criterion=selected_criterion,
+                                                           min_samples_split=num_min_samples_split
+                                                            )
+
+            #END RANDOM FOREST REGRESSOR CODE -------------------------------------------------------------------------
+
+            #BEGIN RIDGE REGRESSOR CODE -------------------------------------------------------------------------------
+            elif reg_algorithim == 'Ridge Regressor':
+                alpha_value = st.number_input(label='Input Alpha Value',
+                                              min_value=0.0,
+                                              value=1.0,
+                                              step=0.01,
+                                              format='%.2f')
+
+                selected_model = Ridge(alpha=alpha_value)
+
+            #END RIDGE REGRESSOR CODE ---------------------------------------------------------------------------------
+
+        #END REGRESSION CODE ---------------------------------------------------------------------------------------
+
+        #BEGIN CLASSIFICATION CODE ------------------------------------------------------------------------------------
+        elif options_sup == 'Classification' and not X_sup.empty:
             class_algorithim = st.selectbox(label='Choose Classification Algorithm',
                                             options=['Support Vector Machine (SVM)',
                                                      'k-Nearest Neighbors (k-NN)',
                                                      'Random Forest Classifier']
                                             )
+
+            #BEGIN SUPPORT VECTOR MACHINE CODE -----------------------------------------------------------------------
             if class_algorithim == 'Support Vector Machine (SVM)':
                 #Sets degree to a default value in case kernel_type isn't polynomial and thus degree isn't declared
                 degree = 3
 
                 #Selecting C value hyperparameter
-                c_value = st.number_input('Input C Value', min_value=0.0,
+                c_value = st.number_input('Input C Value',
+                                          min_value=0.0,
                                           value=1.0,
                                           step=0.01,
                                           format="%.2f")
 
                 #Selecting Kernel hyperparameter
-                kernel_type = st.selectbox('Select a kernel',
+                kernel_type = st.selectbox('Select a Kernel',
                                            ('Linear', 'Polynomial', 'Radial Basis Function'),
                                            index=0)
-                st.write('You selected:', kernel_type)
 
                 #Selecting Degree hyperparameter
                 if kernel_type == 'Polynomial':
                     degree = st.number_input('Enter a degree', min_value=0)
-
-
-                #TODO Can add additional advanced settings
-                #advanced_settings = st.checkbox('Enable advanced settings', value = False,)
-                #if advanced_settings:
-
 
                 #changes the kernel_type var to a valid value for the svm function
                 if kernel_type == 'Linear':
@@ -404,84 +519,110 @@ with tab4:
                 selected_model = svm.SVC(C=c_value,
                                          kernel=kernel_type,
                                          degree=degree)
+            #END SUPPORT VECTOR MACHINE CODE ----------------------------------------------------------------------
 
-
-
-
+            #BEGIN K-NEAREST NEIGHBORS CODE -----------------------------------------------------------------------
             elif class_algorithim == 'k-Nearest Neighbors (k-NN)':
 
-                k_value = st.number_input('Input k value.',
+                k_value = st.number_input('Input K Value.',
                                           min_value=1,
-                                          value=1 )
+                                          value=1)
 
-                knn = KNeighborsClassifier(n_neighbors=k_value)
-                selected_model = knn
+                selected_model = KNeighborsClassifier(n_neighbors=k_value)
 
+            #END K-NEAREST NEIGHBORS CODE -------------------------------------------------------------------------
+
+            #BEGIN RANDOM FOREST CLASSIFIER CODE -------------------------------------------------------------------
             elif class_algorithim == 'Random Forest Classifier':
 
-                #TODO: Add the rest of the parameters
-                num_estimators = st.number_input('Enter the number of estimators.',
-                                                 min_value = 1,
-                                                 value = 100)
+                num_estimators = st.number_input('Enter the Number of Estimators.',
+                                                 min_value=1,
+                                                 step=1,
+                                                 value=100)
 
+                selected_criterion = st.selectbox('Select a Criterion',
+                                                  ('Gini', 'Entropy', ' Log Loss'))
+                if selected_criterion == "Log Loss":
+                    selected_criterion = "log_loss"
+                else:
+                    selected_criterion = selected_criterion.lower()
 
-                selected_model = RandomForestClassifier(n_estimators=num_estimators)
+                num_min_samples_split = st.number_input(
+                    "Enter the Minimum Number of Samples Required to Split an Internal Node",
+                    min_value=2,
+                    step=1,
+                    value=2)
 
+                enable_tree_depth = st.checkbox('Enable Tree Depth',
+                                                value=False)
 
-            #fits the selected model to the training data obtained from train_test_split
-            selected_model.fit(X_train, y_train)
+                if enable_tree_depth:
+                    tree_depth = st.number_input('Enter the Maximum Depth of Each Tree.',
+                                                 min_value=1,
+                                                 step=1)
+                    selected_model = RandomForestClassifier(n_estimators=num_estimators,
+                                                            criterion=selected_criterion,
+                                                            max_depth=tree_depth,
+                                                            min_samples_split=num_min_samples_split
+                                                            )
+                else:
+                    selected_model = RandomForestClassifier(n_estimators=num_estimators,
+                                                            criterion=selected_criterion,
+                                                            min_samples_split=num_min_samples_split
+                                                            )
 
-    #END MODEL SELECTION SECTION ------------------------------------------------------------------
+            #END RANDOM FOREST CLASSIFIER CODE ------------------------------------------------------------------
 
+        #END CLASSIFICATION CODE ------------------------------------------------------------------------------------
+    selected_model.fit(X_train, y_train)
 
-    #BEGIN MODEL METRICS SECTION
+    #BEGIN MODEL METRICS CODE -------------------------------------------------------------------------------
     with col2:
+        show_metrics_enabled = False
 
-        #makes predictions on test data
-        y_predictions = selected_model.predict(X_test)
+        # check box for showing model metrics
+        if not X_sup.empty:
+            y_predictions = selected_model.predict(X_test)
+            show_metrics_enabled = st.checkbox("Show Model Metrics")
+        else:
+            st.warning("Select explanatory variables to continue.")
 
-        #check box for showing model metrics
-        show_metrics_enabled = st.checkbox("Show Model Metrics")
-
-        if show_metrics_enabled:
+        if show_metrics_enabled and options_sup == 'Classification':
             st.header("Model Performance Metrics")
 
-        #BEGIN CLASSIFICATION REPORT CODE --------------------------------------------------------
-
-        class_report = classification_report(y_test, y_predictions, output_dict=False)
-
-        if show_metrics_enabled:
+            #BEGIN CLASSIFICATION REPORT CODE --------------------------------------------------------
+            class_report = classification_report(y_test, y_predictions, output_dict=False)
             st.subheader("Classification Report:")
             st.text(class_report)
-        #END CLASSIFICATION REPORT CODE -----------------------------------------------------------
 
-        #BEGIN CONFUSION MATRIX CODE --------------------------------------------------------------
-        #Creates confusion matrix
-        conf_mat = confusion_matrix(y_test, y_predictions)
+            #END CLASSIFICATION REPORT CODE -----------------------------------------------------------
 
-        #Makes labels with number of each outcome
-        conf_mat_labels = [
-            f'True Negative\n{conf_mat[0, 0]}',
-            f'False Positive\n{conf_mat[0, 1]}',
-            f'False Negative\n{conf_mat[1, 0]}',
-            f'True Positive\n{conf_mat[1, 1]}'
-        ]
+            #BEGIN CONFUSION MATRIX CODE --------------------------------------------------------------
+            #Creates confusion matrix
+            conf_mat = confusion_matrix(y_test, y_predictions)
 
-        #gets rid of imperfections in the figure
-        plt.close('all')
+            #Makes labels with number of each outcome
+            conf_mat_labels = [
+                f'True Negative\n{conf_mat[0, 0]}',
+                f'False Positive\n{conf_mat[0, 1]}',
+                f'False Negative\n{conf_mat[1, 0]}',
+                f'True Positive\n{conf_mat[1, 1]}'
+            ]
 
-        #reshapes labels to 2x2 for confusion matrix labelling
-        conf_mat_labels = np.asarray(conf_mat_labels).reshape(2,2)
+            #gets rid of imperfections in the figure
+            plt.close('all')
 
-        #creates the figure
-        conf_mat_fig = sns.heatmap(conf_mat,
-                                   annot=conf_mat_labels,
-                                   fmt = '',
-                                   cmap='Purples',
-                                   cbar = True)
+            #reshapes labels to 2x2 for confusion matrix labelling
+            conf_mat_labels = np.asarray(conf_mat_labels).reshape(2, 2)
 
-        #shows the figure in streamlit if the checkbox is enabled
-        if show_metrics_enabled:
+            #creates the figure
+            conf_mat_fig = sns.heatmap(conf_mat,
+                                       annot=conf_mat_labels,
+                                       fmt='',
+                                       cmap='Purples',
+                                       cbar=True)
+
+
             #Makes a new section for the confusion matrix figure
             st.subheader("Confusion Matrix:")
             st.pyplot(conf_mat_fig.get_figure())
@@ -489,16 +630,15 @@ with tab4:
         #END CONFUSION MATRIX CODE -----------------------------------------------------------------
 
         #BEGIN PREDICTION UPLOAD CODE --------------------------------------------------------------
-
-
         #Reads in data file that user wants predictions on
-        predicting_data_file = st.file_uploader('Upload a file with values to be predicted.')
+        if not X_sup.empty:
+            predicting_data_file = st.file_uploader('Upload a file with values to be predicted.')
 
-        if predicting_data_file is None:
-            st.error('Need to upload a prediction file.')
-        else:
-            data_load_state2 = st.text('Loading data....')
-            predicting_data = load_data(predicting_data_file, 10000)
-            data_load_state2.text('Done!')
+            if predicting_data_file is None:
+                st.error('Need to upload a prediction file.')
+            else:
+                data_load_state2 = st.text('Loading data....')
+                predicting_data = load_data(predicting_data_file, 10000)
+                data_load_state2.text('Done!')
 
         #END PREDICTION UPLOAD CODE ---------------------------------------------------------------
