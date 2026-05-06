@@ -56,32 +56,46 @@ with preprocessing_tab:
     st.subheader("Encoding")
     
     with st.expander("Why Encode?"):
-        st.markdown("Placeholder")
+        st.markdown("Machine learning models typically require numerical input data. Thus," \
+        "categorical features must be converted into numerical features before they can be used to train a model. " \
+        "This process is called encoding.")
 
     with st.expander("What is One-Hot Encoding?"):
-        st.markdown("Placeholder")
+        st.markdown("One-hot encoding is a method of encoding categorical features. " \
+        "The algorithm creates a new binary feature for every unique category in the categorical feature. " \
+        "For example, an `RGB` feature with the categories red, green, and blue would be converted into three " \
+        "binary features `is_red`, `is_green`, and `is_blue`. If a data point had the value red for the RGB features, " \
+        "then the `is_red` would be 1 while `is_green` and `is_blue` would be 0. " \
+        "\n\nOne-hot encoding is ideal for categorical features that do not have an inherent order. " \
+        "However, one-hot encoding can lead to a substantial increase in the number of features depending on the number of unique " \
+        "cateogories in the categorical feature.")
 
-    with st.expander("What is Ordinal Encoding?"):
-        st.markdown("Placeholder")
+    with st.expander("What is Ordinal Encoding?"): 
+        st.markdown("Ordinal encoding is a method of encoding cateogorical features that have an inherent order, like `education_level` " \
+        "with categories `high_school`, `bachelor`, and `master`. The user can assign each category a numerical value that " \
+        "reflects the order of the categories. For instance, `high_school` could be assigned a value of 1, `bachelor` a value of 2, and `master` a value of 3.")
 
     with st.expander("What is Target Encoding?"):
-        st.markdown("Placeholder")
-
+        st.markdown("Target encoding is a method of encoding categorical features that uses the target variable to assign numerical values to categories. " \
+        "For example, if the target variable is `income` and the categorical feature is `education_level`, then the algorithm would calculate the mean income "
+        "for each education level and assign that value to the corresponding category. Target encoding can be useful for categorical features that have a " \
+        "large number of unique values. However, target encoding can be prone to overfitting since the encoding is based on the target variable.")
     st.subheader("Feature Scaling")
     with st.expander("What is Normalization?"):
         st.markdown("Normalization, or Min-Max Scaling, is a form of feature scaling that maps data to the "
-                    "range [0, 1].  \n\n")
-                    #TODO: Finish when to normalize section
-                    # "**When to Normalize**:  \n"
-                    # "Data should be normalized when the distribution of the data is unknown or does not follow a Gaussian distribution. "
-                    # "Normalization is highly sensitive to outliers since the range of values is confined to [0,1]")
+                    "range [0, 1].  \n\n" \
+                    "**When to Normalize**:  \n" \
+                    "Data should be normalized when the distribution of the data is unknown or does not follow a Gaussian distribution. " \
+                    "Normalization is highly sensitive to outliers since the range of values is confined to [0,1]")
+                     
 
     with st.expander("What is Standardization?"):
         st.markdown("Standardization is a feature scaling technique that scales the data such that the mean "
                     "of the features is 0 and the standard deviation is 1. This makes the data have similar properties to "
-                    "a Gaussian distribution, however, this does not make the data have the shape of a Gaussian distribution.  \n\n")
-                    #TODO: finish when to standardize section
-                    # "**When to Standardize**:  \n")
+                    "a Gaussian distribution, however, this does not make the data have the shape of a Gaussian distribution.  \n\n" \
+                    "**When to Standardize**:  \n" \
+                    "Data should be standardized when the distribution of the data is known to be Gaussian or approximately Gaussian. " \
+                    "Standardization is less sensitive to outliers than normalization since the data is not confined to a specific range.")
 
 
 
@@ -249,7 +263,7 @@ with model_metrics_tab:
             "Metric": ["MSE", "RMSE", "MAE", "MAPE"],
             "Use Case": [
                 "• Use when large errors should be penalized heavily\n• Use when model should be sensitive to outliers",
-                "• Use when MSE the benefits of MSE are desired, but in the target variable's units",
+                "• Use when the benefits of MSE are desired, but in the target variable's units",
                 "• Use when equal weighting of all errors is desired\n• Use when you want errors to be displayed in the target variable's units",
                 "• Use when you want errors to be displayed as a percentage\n• Use when you want to compare model performance across different units."
             ],

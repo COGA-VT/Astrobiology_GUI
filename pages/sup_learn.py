@@ -100,7 +100,6 @@ if 'data_file_data' in st.session_state:
                 X_test = X_test.select_dtypes(include='number')
 
 
-
             #Begin Regression Code -----------------------------------------------------------------------------------------
 
             # Begin HistGradBoost --------------------------------------------------------------------------------------
@@ -514,6 +513,18 @@ if 'data_file_data' in st.session_state:
             with col2:
                 st.subheader("Model Performance Metrics")
 
+                # Tracking parametric models to validate model assumptions
+                parametric_models = ("Logistic Regression", "Ridge Regressor")
+
+                if model_choice in parametric_models:
+                    # Get normality test results from session state
+                    normal_tests = st.session_state['normality_tests']
+                    
+                    # Index the boolean value containing normality from HZ test
+                    if normal_tests[data_form][2] == False:
+                        st.warning("Warning: the data fails an HZ test for multivariate normality.")
+                        
+                
                 # Check if model has been trained
                 if not st.session_state.get('model_trained', False):
                     st.info('Please click "Train Model" to train the model before viewing metrics.')
@@ -917,7 +928,7 @@ if 'data_file_data' in st.session_state:
                 X_pred = X_pred.select_dtypes(include='number')
                 X_pred = X_pred.drop(columns=st.session_state['target'], errors='ignore')
 
-                if data_form is 'Scaled':
+                if data_form == 'Scaled':
                     scaler = st.session_state['sup_raw_scaler']
                     columns = X_train.drop(columns=st.session_state['target'], errors='ignore').columns
                     scaled_array = scaler.transform(X_pred[columns])

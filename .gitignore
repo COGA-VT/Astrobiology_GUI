@@ -2,3 +2,5 @@ pages/__pycache__
 .devcontainer/
 .idea/
 .venv/
+
+graphmaker.py

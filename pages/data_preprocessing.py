@@ -1,15 +1,16 @@
 import numbers
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler, MaxAbsScaler, OneHotEncoder, \
-    OrdinalEncoder, LabelEncoder, TargetEncoder
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder, \
+    OrdinalEncoder, TargetEncoder
 from streamlit import columns
 import copy
+import pingouin as pg
+
 
 import hashlib
 
@@ -465,6 +466,7 @@ if data is not None:
 
     else:
         st.warning("Encoding can only be used when categorical variables are selected.")
+
     #End Encoding Code
 
     #Feature Scaling
@@ -520,20 +522,23 @@ if data is not None:
     if scaler != 'None':
 
         #Scaled Data
-        sup_raw_scaler.fit(X_train[numerical_elements])
-        unsup_scaler.fit(X[numerical_elements])
+        try:
+            sup_raw_scaler.fit(X_train[numerical_elements])
+            unsup_scaler.fit(X[numerical_elements])
 
-        #Transform scaled data
-        X_train_scaled = scale_data(sup_raw_scaler, X_train[numerical_elements])
-        X_test_scaled = scale_data(sup_raw_scaler, X_test[numerical_elements])
-        X_scaled = scale_data(unsup_scaler, X[numerical_elements])
+            #Transform scaled data
+            X_train_scaled = scale_data(sup_raw_scaler, X_train[numerical_elements])
+            X_test_scaled = scale_data(sup_raw_scaler, X_test[numerical_elements])
+            X_scaled = scale_data(unsup_scaler, X[numerical_elements])
 
-        #Upload scaled data to session state
-        st.session_state.update({'X_train_scaled': X_train_scaled,
-                                 'X_test_scaled': X_test_scaled,
-                                 'X_scaled': X_scaled,
-                                 'sup_raw_scaler' : sup_raw_scaler})
-
+            #Upload scaled data to session state
+            st.session_state.update({'X_train_scaled': X_train_scaled,
+                                    'X_test_scaled': X_test_scaled,
+                                    'X_scaled': X_scaled,
+                                    'sup_raw_scaler' : sup_raw_scaler})
+        except ValueError:
+            st.warning("Please select variables before selecting a feature scaling technique.")
+            st.stop()
 
         #Scaled and Encoded Data
         if encoding_selection != 'None' and 'X_train_encoded' in st.session_state:
@@ -603,3 +608,25 @@ if data is not None:
 
 #End Preprocessing Code
 
+
+#Begin Model Assumption Code
+
+# Drop non-numeric features, test requires numeric entries
+normality_tests = {}
+normality_tests["Raw"] = pg.multivariate_normality(X=X_train.select_dtypes([np.number]), alpha=0.05)
+
+
+if encoding_selection != 'None':
+    # HZ test for multivariate normality
+    try:
+        normality_tests["Encoded"] = pg.multivariate_normality(X=X_train_encoded, alpha=0.05)
+    except NameError:
+        print("Encoding technique selected without selection of categorical variables.")
+
+if scaler != 'None':
+    normality_tests["Scaled"] = pg.multivariate_normality(X=X_train_scaled, alpha=0.05)
+
+if encoding_selection != 'None' and scaler != 'None':
+     normality_tests["Encoded & Scaled"] = pg.multivariate_normality(X=X_train_encode_scaled, alpha=0.05)
+
+st.session_state['normality_tests'] = normality_tests
