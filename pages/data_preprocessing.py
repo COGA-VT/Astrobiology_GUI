@@ -613,20 +613,26 @@ if data is not None:
 
 # Drop non-numeric features, test requires numeric entries
 normality_tests = {}
-normality_tests["Raw"] = pg.multivariate_normality(X=X_train.select_dtypes([np.number]), alpha=0.05)
 
-
-if encoding_selection != 'None':
+try: 
+    normality_tests["Raw"] = pg.multivariate_normality(X=X_train.select_dtypes([np.number]), alpha=0.05)
+    if encoding_selection != 'None':
     # HZ test for multivariate normality
-    try:
-        normality_tests["Encoded"] = pg.multivariate_normality(X=X_train_encoded, alpha=0.05)
-    except NameError:
-        print("Encoding technique selected without selection of categorical variables.")
 
-if scaler != 'None':
-    normality_tests["Scaled"] = pg.multivariate_normality(X=X_train_scaled, alpha=0.05)
+        try:
+            normality_tests["Encoded"] = pg.multivariate_normality(X=X_train_encoded, alpha=0.05)
+        except NameError:
+            print("Encoding technique selected without selection of categorical variables.")
 
-if encoding_selection != 'None' and scaler != 'None':
-     normality_tests["Encoded & Scaled"] = pg.multivariate_normality(X=X_train_encode_scaled, alpha=0.05)
+    if scaler != 'None':
+        normality_tests["Scaled"] = pg.multivariate_normality(X=X_train_scaled, alpha=0.05)
 
-st.session_state['normality_tests'] = normality_tests
+    if encoding_selection != 'None' and scaler != 'None':
+        normality_tests["Encoded & Scaled"] = pg.multivariate_normality(X=X_train_encode_scaled, alpha=0.05)
+
+    st.session_state['normality_tests'] = normality_tests
+
+except NameError:
+    print("X_train not found. Ensure that data has been uploaded and preprocessed before running assumption tests.")
+
+

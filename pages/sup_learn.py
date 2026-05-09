@@ -290,7 +290,8 @@ if 'data_file_data' in st.session_state:
                 }
 
                 model_choice = st.selectbox('Choose Regression Algorithm', list(model_display_names.keys()))
-                selected_model = model_display_names[model_choice]()
+                model_builder = model_display_names[model_choice]
+                selected_model = model_builder()
 
 
 
@@ -487,11 +488,13 @@ if 'data_file_data' in st.session_state:
                                             help="Choosing an ML model is heavily reliant on the structure of your data. Each model " \
                                             "has its own strengths and weaknesses and provides different use cases. " \
                                             "Read more about model selection [here.](https://www.ibm.com/think/topics/model-selection)")
-                selected_model = model_display_names[model_choice]()
+                model_builder = model_display_names[model_choice]
+                selected_model = model_builder()
 
 
              # End Classification Code --------------------------------------------------------------------------
             st.session_state['unfitted_model'] = selected_model
+
 
             # Reset training flag if model selection changed
             current_model_type = selected_model.__class__.__name__
@@ -502,10 +505,41 @@ if 'data_file_data' in st.session_state:
             # Add button to train model
             train_button = st.button('Train Model', key='train_button')
             if train_button:
+                trained_model = selected_model.fit(X_train, y_train)
+                
+                st.session_state['trained_model'] = trained_model
                 st.session_state['model_trained'] = True
-                st.session_state['trained_model'] = selected_model.fit(X_train, y_train)
-                st.session_state['last_trained_model_type'] = current_model_type
+
+                y_pred = trained_model.predict(X_test)
+
+                if options_sup == "Regression":
+                    metrics = {
+                        'MSE': mean_squared_error(y_test, y_pred),
+                        'RMSE': root_mean_squared_error(y_test, y_pred),
+                        'MAE': mean_absolute_error(y_test, y_pred),
+                        'MAPE': mean_absolute_percentage_error(y_test, y_pred)
+                    }
+
+                    is_regression = True
+
+                else:
+                    metrics = {
+                        'Accuracy': accuracy_score(y_test, y_pred),
+                        'F1': f1_score(y_test, y_pred, average='weighted'),
+                        'Precision': precision_score(y_test, y_pred, average='weighted'),
+                        'Recall': recall_score(y_test, y_pred, average='weighted')
+                    }
+
+                    is_regression = False
+
+                st.session_state['model_comparison_history'].append({
+                    "Model": selected_model.__class__.__name__,
+                    "is_regression": is_regression,
+                    "Metrics": metrics
+                })
                 st.success('Model trained successfully!')
+
+            trained_model = st.session_state.get('trained_model')
 
             # End Model Training Code ------------------------------------------------------------------------------------------
 
@@ -549,13 +583,12 @@ if 'data_file_data' in st.session_state:
                     y_pred = trained_model.predict(X_test)
 
                 except ValueError as e:
-                    st.write(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-                    st.write(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-                    st.subheader("X train dataframe")
-                    st.dataframe(X_train)
-                    st.subheader("X test dataframe")
-                    st.dataframe(X_test)
-                    st.error(f"Prediction failed: {e}")
+
+                    st.info("New data form selected. Retrain the model to view metrics.")
+
+                    with st.expander("More Info"):
+                        st.error(f"Prediction failed: {e}")
+                    
                     st.stop()
 
 
@@ -581,11 +614,6 @@ if 'data_file_data' in st.session_state:
                     display_cols = list(metrics.keys())
                     is_regression = False
 
-                st.session_state['model_comparison_history'].append({
-                    "Model": selected_model.__class__.__name__,
-                    "is_regression" : is_regression,
-                    "Metrics": metrics
-                })
 
                 #Begin Model Comparison History Code ------------------------------------------------------------------
                 with st.expander('Model Comparison History'):
@@ -760,13 +788,13 @@ if 'data_file_data' in st.session_state:
                 # Begin Regression Metrics Code --------------------------------------------------------------------------------
                 elif options_sup == 'Regression':
                     try:
-                        check_is_fitted(selected_model)
+                        check_is_fitted(trained_model)
                     except NotFittedError as e:
                         st.error('Model has not been fitted. Model metrics cannot be calculated.')
 
                     # Begin Regression Loss Function Code ----------------------------------------------------------------------
                     with st.expander('Loss Functions'):
-                        y_pred = selected_model.predict(X_test)
+                        y_pred = trained_model.predict(X_test)
                         MSE = mean_squared_error(y_test, y_pred)
                         RMSE = root_mean_squared_error(y_test, y_pred)
                         MAE = mean_absolute_error(y_test, y_pred)
@@ -822,22 +850,22 @@ if 'data_file_data' in st.session_state:
 
                 #Begin Feature Importance Code -----------------------------------------------------------------------
                 with st.expander('Feature Importance (SHAP)'):
-                    shap.initjs()
+                    #shap.initjs()
                     if 'shap_values' not in st.session_state:
                         st.session_state['shap_values'] = None
                         st.session_state['class_count'] = 0
 
                     if st.button('Generate SHAP Plots'):
                         try:
-                            check_is_fitted(selected_model)
+                            check_is_fitted(trained_model)
 
-                            if hasattr(selected_model, "predict_proba"):
-                                predict_fn = lambda x: selected_model.predict_proba(x)
+                            if hasattr(trained_model, "predict_proba"):
+                                predict_fn = lambda x: trained_model.predict_proba(x)
                             else:
-                                predict_fn = lambda x: selected_model.predict(x)
+                                predict_fn = lambda x: trained_model.predict(x)
 
                             with st.spinner("Generating SHAP values..."):
-                                model_type = type(selected_model)
+                                model_type = type(trained_model)
                                 test_sample = X_test[:50] if len(X_test) > 50 else X_test
 
                                 if isinstance(X_train, np.ndarray):
@@ -852,9 +880,9 @@ if 'data_file_data' in st.session_state:
 
                                 if model_type in [RandomForestClassifier, RandomForestRegressor,
                                                   HistGradientBoostingRegressor]:
-                                    explainer = shap.TreeExplainer(selected_model)
+                                    explainer = shap.TreeExplainer(trained_model)
                                 elif model_type in [Ridge, LogisticRegression]:
-                                    explainer = shap.LinearExplainer(selected_model, X_train)
+                                    explainer = shap.LinearExplainer(trained_model, X_train)
                                 elif model_type in [svm.SVC, svm.SVR, KNeighborsClassifier]:
                                     explainer = shap.KernelExplainer(predict_fn, background_data)
                                 else:
@@ -959,7 +987,7 @@ if 'data_file_data' in st.session_state:
 
 
             try:
-                predictions = selected_model.predict(X_pred)
+                predictions = trained_model.predict(X_pred)
 
                 #Adds predictions to original dataset
                 pred_series = pd.Series(predictions, name=st.session_state['target'], index=X_pred_original.index)
