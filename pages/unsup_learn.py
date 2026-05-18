@@ -188,6 +188,9 @@ if 'data_file_data' in st.session_state:
                                         options=['Kmeans',
                                                  'DBSCAN',
                                                  'Gaussian Mixture'])
+        
+        color_by = st.selectbox(label='Color points by',
+                                options=['Cluster Labels'] + list(X.columns) + ['Target Variable'])
 
         if clustering_method == 'Kmeans':
             n_clusters = st.number_input('Enter Number of Clusters',
@@ -211,8 +214,6 @@ if 'data_file_data' in st.session_state:
             DBSCAN_labels = X_DBSCAN.labels_
             DBSCAN_labels = DBSCAN_labels.astype(str)
             labels = [outlier.replace('-1', 'Outlier') for outlier in DBSCAN_labels]
-
-
 
         else:
             n_components = st.number_input('Enter number of components',
@@ -238,8 +239,12 @@ if 'data_file_data' in st.session_state:
 
             labels = X_GM.predict(X).astype(str)
 
-
-
+        if color_by == 'Cluster Labels':
+            color_values = labels
+        elif color_by == 'Target Variable':
+            color_values = y
+        else: 
+            color_values = X[color_by]
 
     with col2:
         # Plot t-SNE Results
@@ -249,7 +254,7 @@ if 'data_file_data' in st.session_state:
             fig = px.scatter(tsne_df,
                              x='tsne_1',
                              y='tsne_2',
-                             color=labels,
+                             color=color_values,
                              title=dim_reduction_method
                              )
             fig.update_traces(
@@ -292,7 +297,7 @@ if 'data_file_data' in st.session_state:
             fig = px.scatter(PCA_df,
                              x='PCA_1',
                              y='PCA_2',
-                             color=labels,
+                             color=color_values,
                              title=dim_reduction_method)
             fig.update_traces(
                 marker=dict(size=12,
@@ -340,7 +345,7 @@ if 'data_file_data' in st.session_state:
             fig = px.scatter(mds_df,
                              x='MDS_1',
                              y='MDS_2',
-                             color = labels,
+                             color=color_values,
                              title=dim_reduction_method
                              )
             fig.update_traces(marker = dict(size=12,

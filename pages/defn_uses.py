@@ -12,7 +12,7 @@ with general_terms_tab:
     st.subheader('Machine Learning Terms')
     #Supervised learning
     with st.expander('What is Supervised Learning?'):
-        st.markdown("Supervised learning is a type of machine learning that is trained on labeled data sets. Labeled data sets "
+        st.markdown("Supervised learning is a type of machine learning that trains models on labeled data sets. Labeled data sets "
                     "provide the algorithm with the correct output value to allow for the model to correct itself over iterations. "
                     "Supervised learning is used to predict the outcomes of unseen data and can be split into two main branches: "
                     "classification and regression.")
@@ -83,8 +83,9 @@ with preprocessing_tab:
     st.subheader("Feature Scaling")
     with st.expander("What is Normalization?"):
         st.markdown("Normalization, or Min-Max Scaling, is a form of feature scaling that maps data to the "
-                    "range [0, 1].  \n\n" \
-                    "**When to Normalize**:  \n" \
+                    "range [0, 1] using the following formula:")
+        st.latex(r"x_{norm} = \frac{x-x_{min}}{x_{max}-x_{min}}")
+        st.markdown("**When to Normalize**:  \n" \
                     "Data should be normalized when the distribution of the data is unknown or does not follow a Gaussian distribution. " \
                     "Normalization is highly sensitive to outliers since the range of values is confined to [0,1]")
                      
@@ -92,8 +93,10 @@ with preprocessing_tab:
     with st.expander("What is Standardization?"):
         st.markdown("Standardization is a feature scaling technique that scales the data such that the mean "
                     "of the features is 0 and the standard deviation is 1. This makes the data have similar properties to "
-                    "a Gaussian distribution, however, this does not make the data have the shape of a Gaussian distribution.  \n\n" \
-                    "**When to Standardize**:  \n" \
+                    "a Gaussian distribution, however, this does not make the data have the shape of a Gaussian distribution. " \
+                    "Standardization uses the following formula:")
+        st.latex(r"x_{std} = \frac{x - \mu}{\sigma}")
+        st.markdown("**When to Standardize**:  \n" \
                     "Data should be standardized when the distribution of the data is known to be Gaussian or approximately Gaussian. " \
                     "Standardization is less sensitive to outliers than normalization since the data is not confined to a specific range.")
 

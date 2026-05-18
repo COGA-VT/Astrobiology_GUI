@@ -5,8 +5,7 @@ import plotly.express as px
 import numpy as np
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder, \
-    OrdinalEncoder, TargetEncoder
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder, TargetEncoder
 from streamlit import columns
 import copy
 import pingouin as pg
@@ -55,7 +54,7 @@ if data_file is not None:
         st.session_state['cat_features'] = []
         st.session_state['target'] = None
 
-        st.info("New dataset detected. Feature selections have been reset.")
+        st.info(f"New file '{data_file.name}' uploaded and processed. {len(data)} observations across {len(data.columns)} variables loaded.")
 
 #runs when data is detected in the persistent cache
 
@@ -337,7 +336,7 @@ if data is not None:
 
 
     # Define the encoding options
-    encoding_options = ['None', 'One-Hot', 'Ordinal', 'Target (Supervised Only)']
+    encoding_options = ['None', 'One-Hot', 'Target (Supervised Only)']
 
 
     # Display the selectbox using session_state as the key
@@ -392,29 +391,6 @@ if data is not None:
             #Encoding data for unsupervised learning portion
             X_encoded_cat = encode_data(unsup_encoder, X, categorical_elements, columns = True)
 
-
-            #Ordinal Encoding
-        elif encoding_selection == 'Ordinal':
-            sup_encoder = OrdinalEncoder()
-            unsup_encoder = copy.deepcopy(sup_encoder)
-
-            st.session_state['sup_encoder'] = sup_encoder
-
-            sup_encoder.fit(X_train[categorical_elements])
-            unsup_encoder.fit(X[categorical_elements])
-
-            #Encode training data
-            X_train_encoded_cat = encode_data(sup_encoder, X_train, categorical_elements, columns = True)
-
-            #Encoding testing data with the encoder fit on the training data
-            try:
-                X_test_encoded_cat = encode_data(sup_encoder, X_test, categorical_elements, columns = True)
-            except ValueError as e:
-                st.error(f"Ordinal Encoding failed. There are likely categories in the testing set that were not seen in the "
-                         f"training set. {e}")
-                st.stop()
-
-            X_encoded_cat = encode_data(unsup_encoder, X, categorical_elements, columns = True)
 
         #Target Encoding
         #TODO: Make it so that column names are retained after encoding
