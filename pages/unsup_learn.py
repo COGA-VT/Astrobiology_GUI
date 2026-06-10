@@ -65,6 +65,8 @@ if 'data_file_data' in st.session_state:
         elif 'X_encoded_scaled' in st.session_state:
             X = st.session_state['X_encoded_scaled']
 
+        number_of_features = X.shape[1]
+
         y = st.session_state['y_raw']
         # Begin Dimensionality Reduction Method Code
 
@@ -88,9 +90,7 @@ if 'data_file_data' in st.session_state:
             return TSNE(n_components,
                         random_state=random_state,
                         perplexity=perplexity,
-                        n_jobs=-1,
-                        method='exact',
-                        max_iter=5000
+                        n_jobs=-1
                         )
 
 
@@ -106,7 +106,8 @@ if 'data_file_data' in st.session_state:
                :return: A PCA model with user-defined parameters
             """
             n_components = st.number_input('Insert Number of Components',
-                                           min_value=2
+                                           min_value=2,
+                                           max_value=number_of_features
                                            )
 
             return PCA(n_components=n_components,
@@ -124,7 +125,8 @@ if 'data_file_data' in st.session_state:
                :return: An MDS model with user-defined parameters
             """
             n_components = st.number_input('Insert Number of Components',
-                                           min_value=2
+                                           min_value=2,
+                                           max_value=number_of_features
                                            )
             return MDS(n_components=n_components,
                       random_state=random_state)
@@ -193,6 +195,8 @@ if 'data_file_data' in st.session_state:
         color_by = st.selectbox(label='Color points by',
                                 options=['Cluster Labels'] + list(X.columns) + ['Target Variable'])
 
+
+        time_start = time()
         if clustering_method == 'Kmeans':
             n_clusters = st.number_input('Enter Number of Clusters',
                                          min_value=2
@@ -239,6 +243,10 @@ if 'data_file_data' in st.session_state:
                                    random_state=random_state).fit(X)
 
             labels = X_GM.predict(X).astype(str)
+
+        time_end = time()
+        time_duration = time_end - time_start
+        st.write(f'The computation time was: {time_duration:.3g} seconds')
 
         if color_by == 'Cluster Labels':
             color_values = labels
