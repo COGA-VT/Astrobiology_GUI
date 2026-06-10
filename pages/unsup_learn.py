@@ -12,6 +12,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 import plotly.express as px
+from time import time
 
 
 
@@ -160,7 +161,7 @@ if 'data_file_data' in st.session_state:
                                             options=['Standard PCA',
                                                      't-SNE',
                                                      'Multidimensional Scaling'])
-
+        time_start = time()
         if dim_reduction_method == 't-SNE':
             tsne = get_tsne_model()
             X_transformed = tsne.fit_transform(X)
@@ -177,9 +178,9 @@ if 'data_file_data' in st.session_state:
             X_transformed = mds.fit_transform(X)
             mds_df = pd.DataFrame({"MDS_1": X_transformed[:, 0],
                                    'MDS_2': X_transformed[:, 1]})
-
-
-
+        time_end = time()
+        time_duration = time_end - time_start
+        st.write(f'The computation time was: {time_duration:.3g} seconds')
     # End Dimensionality Reduction Code
 
         st.divider()
@@ -359,4 +360,3 @@ if 'data_file_data' in st.session_state:
                       loc=2,
                       borderaxespad=0.0)
             st.plotly_chart(fig, use_container_width=True)
-
