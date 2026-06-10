@@ -90,9 +90,7 @@ if 'data_file_data' in st.session_state:
             return TSNE(n_components,
                         random_state=random_state,
                         perplexity=perplexity,
-                        n_jobs=-1,
-                        method='exact',
-                        max_iter=5000
+                        n_jobs=-1
                         )
 
 
