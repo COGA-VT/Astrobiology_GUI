@@ -65,6 +65,8 @@ if 'data_file_data' in st.session_state:
         elif 'X_encoded_scaled' in st.session_state:
             X = st.session_state['X_encoded_scaled']
 
+        number_of_features = X.shape[1]
+
         y = st.session_state['y_raw']
         # Begin Dimensionality Reduction Method Code
 
@@ -106,7 +108,8 @@ if 'data_file_data' in st.session_state:
                :return: A PCA model with user-defined parameters
             """
             n_components = st.number_input('Insert Number of Components',
-                                           min_value=2
+                                           min_value=2,
+                                           max_value=number_of_features
                                            )
 
             return PCA(n_components=n_components,
@@ -124,7 +127,8 @@ if 'data_file_data' in st.session_state:
                :return: An MDS model with user-defined parameters
             """
             n_components = st.number_input('Insert Number of Components',
-                                           min_value=2
+                                           min_value=2,
+                                           max_value=number_of_features
                                            )
             return MDS(n_components=n_components,
                       random_state=random_state)
