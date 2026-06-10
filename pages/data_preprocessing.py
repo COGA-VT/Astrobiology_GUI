@@ -15,6 +15,18 @@ import hashlib
 
 # Begin Data Upload Code
 st.subheader('Data')
+
+# Floyd's Addition
+csv = 'src/assets/Nichols_et_al_2024.csv'
+with open(csv, 'rb') as file:
+    st.download_button(
+        label="Download Example Data",
+        data=file,
+        file_name="Example_Data.csv",
+        mime="text/csv",
+        icon=":material/download:",
+    )
+    
 data_file = st.file_uploader('Upload a data file', 
                              type='csv', 
                              key='data_file'
@@ -610,5 +622,3 @@ try:
 
 except NameError:
     print("X_train not found. Ensure that data has been uploaded and preprocessed before running assumption tests.")
-
-

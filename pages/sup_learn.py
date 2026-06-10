@@ -19,6 +19,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.utils.validation import check_is_fitted
 import seaborn as sns
+from time import time
 
 
 st.title('Supervised Learning')
@@ -504,6 +505,7 @@ if 'data_file_data' in st.session_state:
 
             # Add button to train model
             train_button = st.button('Train Model', key='train_button')
+            time_start = time()
             if train_button:
                 trained_model = selected_model.fit(X_train, y_train)
                 
@@ -538,6 +540,9 @@ if 'data_file_data' in st.session_state:
                     "Metrics": metrics
                 })
                 st.success('Model trained successfully!')
+                time_end = time()
+                time_duration = time_end - time_start
+                st.write(f'The computation time was: {time_duration:.3g} seconds')
 
             trained_model = st.session_state.get('trained_model')
 
@@ -855,6 +860,7 @@ if 'data_file_data' in st.session_state:
                         st.session_state['shap_values'] = None
                         st.session_state['class_count'] = 0
 
+                    time_start = time()
                     if st.button('Generate SHAP Plots'):
                         try:
                             check_is_fitted(trained_model)
@@ -938,6 +944,9 @@ if 'data_file_data' in st.session_state:
                         fig_bar, ax_bar = plt.subplots()
                         shap.plots.bar(shap_values_to_plot, show=False)
                         st.pyplot(fig_bar)
+                    time_end = time()
+                    time_duration = time_end - time_start
+                    st.write(f'The computation time was: {time_duration:.3g} seconds')
                 #End Feature Importance Code -------------------------------------------------------------------------
 
             # End Model Metrics Code -------------------------------------------------------------------------------------------
@@ -1014,7 +1023,3 @@ if 'data_file_data' in st.session_state:
             except ValueError as e:
                 st.info(f"{e}")
                 st.stop()
-
-
-
-
