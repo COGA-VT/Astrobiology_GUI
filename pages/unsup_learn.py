@@ -129,6 +129,8 @@ if 'data_file_data' in st.session_state:
                                            max_value=number_of_features
                                            )
             return MDS(n_components=n_components,
+                      max_iter=10,
+                      n_jobs=-1, 
                       random_state=random_state)
 
 
