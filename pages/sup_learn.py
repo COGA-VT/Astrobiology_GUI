@@ -569,20 +569,6 @@ if 'data_file_data' in st.session_state:
                     st.info('Please click "Train Model" to train the model before viewing metrics.')
                     st.stop()
 
-                if options_sup == "Classification":
-                    label_encoder = LabelEncoder()
-                    try:
-                        y_train = label_encoder.fit_transform(y_train)
-                        y_test = label_encoder.transform(y_test)
-                    except ValueError as e:
-                        st.error("Label encoding failed, check prediction type.")
-                        if st.button('View Exception'):
-                            st.error(e)
-                        st.stop()
-
-                    # Store the encoder in session_state if needed for later inverse_transform
-                    st.session_state["label_encoder"] = label_encoder
-
                 trained_model = st.session_state.get('trained_model')
                 try:
                     y_pred = trained_model.predict(X_test)
@@ -1011,7 +997,7 @@ if 'data_file_data' in st.session_state:
                                      captions=['Array of predictions', 'Predictions appended to original dataset'],
                                      horizontal=True)
 
-                if view_pred is 'Predictions Only':
+                if view_pred == 'Predictions Only':
                     st.dataframe(predictions)
                 else:
                     st.dataframe(X_pred_with_preds)
