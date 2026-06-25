@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder, TargetEncoder
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 from streamlit import columns
 import copy
 import pingouin as pg
@@ -14,9 +15,9 @@ import pingouin as pg
 import hashlib
 
 # Begin Data Upload Code
-st.subheader('Data')
+st.subheader('Data Importing')
 
-# Floyd's Addition
+# Enable Example Data Downloading
 csv = 'src/assets/Nichols_et_al_2024.csv'
 with open(csv, 'rb') as file:
     st.download_button(
@@ -79,10 +80,11 @@ if 'data_file_data' in st.session_state:
 if data is not None:
 
     # Remove Columns that are Strings
-
+    st.subheader('Data Inspection')
     display_choice = st.radio('',
                               options=['Data',
-                                       'Correlation Matrix'],
+                                       'Pearson Correlation Matrix',
+                                      'Multicollinearity Assessment'],
                               horizontal=True,
                               help="Correlation matrices measure the strength and direction of linear relationships between pairs of variables."
                               " High correlation between independent variables is a potential indicator of multicollinearity. This can result in larger standard errors and difficulty interpreting each variable's " \
@@ -91,19 +93,49 @@ if data is not None:
     if display_choice == 'Data':
         st.markdown('**Data Preview**')
         st.dataframe(data.head())
-    if display_choice == 'Correlation Matrix':
-        corr_matrix = data.select_dtypes(include=np.number).corr()
+    if display_choice == 'Pearson Correlation Matrix':
+        corr_matrix = data.select_dtypes(include=np.number).corr(method = 'pearson')
 
         fig = px.imshow(
             corr_matrix,
             text_auto=True,
-            title='Correlation Matrix',
+            title='Pearson Correlation Matrix',
             aspect='auto'
         )
 
         st.plotly_chart(fig, use_container_width=True)
+#### Floyd's Addition VIF   
+    if display_choice == 'Multicollinearity Assessment':
+        X = data.select_dtypes(include=np.number).dropna()
+        vif_data = pd.DataFrame()
+        vif_data["Feature"] = X.columns
+        
+        # calculating VIF for each feature
+        vif_data["VIF"] = [variance_inflation_factor(X.values, i)
+                                  for i in range(len(X.columns))]
+        vif_data["VIF"] = np.sort(vif_data["VIF"])
+        vif_data = vif_data[::-1]
 
+        fig = px.bar(
+            vif_data,
+            x='Feature',
+            y='VIF',
+            title='Multicollinearity Assessment'
+        )
 
+        st.plotly_chart(fig, use_container_width=True)
+        avg_vif = np.mean(vif_data.VIF)
+        st.write(f'The Average Multicollinearity is: {avg_vif:.1f}')
+        
+        if avg_vif >= 5 and avg_vif <= 10:
+            st.warning("The data has moderate multicollinearity which can affect model interpretations and generalizations. "\
+            "Consider removing some of the features with high multicollinearity (VIF values) from the data set to improve model interpretations and generalizations.")
+        elif avg_vif >= 10:
+            st.warning("The data has extreme multicollinearity which can affect model interpretations and generalizations. "\
+            "Consider collecting more data or select a model that is more robust towards multicollinearity such as HGBoost or Random Forest. ")
+            
+#####
+    
     st.subheader('Data and Hyperparameter Selection')
 
     X = data.replace([np.inf, -np.inf], np.nan).dropna(axis=0)
@@ -250,6 +282,7 @@ if data is not None:
 
         st.session_state['train_size'] = train_proportion
 
+        np.random.seed(42)
         X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_proportion)
 
         # Imputation if selected
