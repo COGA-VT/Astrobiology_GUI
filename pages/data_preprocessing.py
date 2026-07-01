@@ -6,16 +6,19 @@ import numpy as np
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder, TargetEncoder
+from sklearn.ensemble import IsolationForest
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from streamlit import columns
 import copy
 import pingouin as pg
-
-
 import hashlib
 
 # Begin Data Upload Code
 st.subheader('Data Importing')
+
+# placeholder until custom seed functionality is added
+SEED = 42
+st.session_state['seed'] = SEED
 
 # Enable Example Data Downloading
 csv = 'src/assets/Nichols_et_al_2024.csv'
@@ -282,8 +285,12 @@ if data is not None:
 
         st.session_state['train_size'] = train_proportion
 
-        np.random.seed(42)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_proportion)
+        np.random.seed(SEED)
+        X_train, X_test, y_train, y_test = train_test_split(X, 
+                                                            y, 
+                                                            train_size=train_proportion,
+                                                            random_state=SEED
+                                                            )
 
         # Imputation if selected
         if imputer_selector == 'Simple Imputer':
@@ -632,26 +639,95 @@ if data is not None:
 
 #Begin Model Assumption Code
 
+
+def run_isolation_forest(X_train, X_test, label, contamination=0.02, n_estimators=200, seed=SEED):
+    """
+    Fits Isolation Forest on training data and predicts on both train/test.
+    Returns structured results for Streamlit storage.
+    """
+
+    # Ensure numeric only
+    X_train_num = X_train.select_dtypes(include=["number"])
+    X_test_num = X_test.select_dtypes(include=["number"])
+
+    iso = IsolationForest(
+        n_estimators=n_estimators,
+        contamination=contamination,
+        random_state=seed,
+        n_jobs=-1
+    )
+
+    iso.fit(X_train_num)
+
+    train_pred = iso.predict(X_train_num)
+    test_pred = iso.predict(X_test_num)
+
+    outlier_rate = np.mean(train_pred ==-1)
+
+    return {
+            "model": iso,
+            "train": train_pred,
+            "test": test_pred,
+            "outlier_rate": outlier_rate
+    }
+
+
+def run_normality_test(X_train, label, alpha=0.05):
+    """
+    Runs multivariate normality test (Pingouin Henze-Zirkler)
+    on numeric features only.
+    """
+
+    # Keep numeric only
+    X_train_num = X_train.select_dtypes(include=["number"])
+
+    # Safety check (HZ test breaks if too few dims/samples sometimes)
+    if X_train_num.shape[1] < 2:
+        return {
+                "error": "Not enough numeric features for multivariate normality test"
+        }
+
+    result = pg.multivariate_normality(
+        X=X_train_num,
+        alpha=alpha
+    )
+
+    # result is usually a tuple-like structure:
+    # (HZ statistic, p-value, normality boolean)
+
+    return {
+            "HZ_result": result
+    }
+
+
 # Drop non-numeric features, test requires numeric entries
-normality_tests = {}
-
 try: 
-    normality_tests["Raw"] = pg.multivariate_normality(X=X_train.select_dtypes([np.number]), alpha=0.05)
-    if encoding_selection != 'None':
-    # HZ test for multivariate normality
+    if "outlier_results" not in st.session_state:
+        st.session_state["outlier_results"] = {}
 
+    if "normality_tests" not in st.session_state:
+        st.session_state["normality_tests"] = {}
+
+    st.session_state["normality_tests"]["Raw"] = run_normality_test(X_train, "Raw")
+    st.session_state["outlier_results"]["Raw"] = run_isolation_forest(X_train, X_test, "Raw", seed=SEED)
+
+    if encoding_selection != 'None':
         try:
-            normality_tests["Encoded"] = pg.multivariate_normality(X=X_train_encoded, alpha=0.05)
+            st.session_state["outlier_results"]["Encoded"] = run_isolation_forest(X_train_encoded, X_test_encoded, "Encoded", seed=SEED)
+            st.session_state["normality_tests"]["Encoded"] = run_normality_test(X_train_encoded, "Encoded")
         except NameError:
             print("Encoding technique selected without selection of categorical variables.")
 
     if scaler != 'None':
-        normality_tests["Scaled"] = pg.multivariate_normality(X=X_train_scaled, alpha=0.05)
+        st.session_state["outlier_results"]["Scaled"] = run_isolation_forest(X_train_scaled, X_test_scaled, "Scaled", seed=SEED)
+        st.session_state["normality_tests"]["Scaled"] = run_normality_test(X_train_scaled, "Scaled")
+        
 
     if encoding_selection != 'None' and scaler != 'None':
-        normality_tests["Encoded & Scaled"] = pg.multivariate_normality(X=X_train_encode_scaled, alpha=0.05)
-
-    st.session_state['normality_tests'] = normality_tests
+        st.session_state["outlier_results"]["Encoded & Scaled"] = run_isolation_forest(X_train_encode_scaled, X_test_encode_scaled, "Encoded & Scaled",seed=SEED)
+        st.session_state["normality_tests"]["Encoded & Scaled"] = run_normality_test(X_train_encode_scaled, "Encoded & Scaled")
 
 except NameError:
     print("X_train not found. Ensure that data has been uploaded and preprocessed before running assumption tests.")
+
+

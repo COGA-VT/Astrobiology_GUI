@@ -40,7 +40,7 @@ if 'data_file_data' in st.session_state:
             data_choices.append('Scaled')
         if 'sup_encoder' in st.session_state and 'X_encoded' in st.session_state:
             data_choices.append('Encoded')
-            if 'sup_encode_scaler' in st.session_state and 'X_encoded_scaled':
+            if 'sup_encode_scaler' in st.session_state and 'X_encoded_scaled' in st.session_state:
                 data_choices.append('Encoded & Scaled')
 
 
@@ -48,7 +48,7 @@ if 'data_file_data' in st.session_state:
                              options=data_choices,
                              horizontal=True)
 
-        if data_form == 'Raw':
+        if data_form == 'raw':
             X = st.session_state['X_raw']
             X = X.select_dtypes(include='number')
             if len(st.session_state['cat_features']) > 0:

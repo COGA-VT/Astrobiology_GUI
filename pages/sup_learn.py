@@ -93,6 +93,15 @@ if 'data_file_data' in st.session_state:
             X_train = st.session_state[X_train_key]
             X_test = st.session_state[X_test_key]
 
+
+            def get_outlier_severity(rate):
+                if rate < 0.01:
+                    return "low"
+                elif rate < 0.05:
+                    return "moderate"
+                else:
+                    return "high"
+
             if data_form == 'Raw':
                 if not X_train.select_dtypes(exclude='number').empty or not X_test.select_dtypes(exclude='number').empty:
                     st.warning("Non-numerical features will be dropped when handling raw data")
@@ -291,6 +300,14 @@ if 'data_file_data' in st.session_state:
                 }
 
                 model_choice = st.selectbox('Choose Regression Algorithm', list(model_display_names.keys()))
+                if model_choice ==  ('Ridge Regressor'):
+                    if data_form == "PCA Reduced":
+                        print("Outlier detection is not available for PCA reduced data.")
+                    else:
+                        results = st.session_state.get("outlier_results", {}).get(data_form)
+                        outlier_rate = results.get("outlier_rate") if results else None
+                        if results is not None:
+                            st.warning(f"The selected model is suscepitble to outliers. An outlier rate of {outlier_rate:.2f} was detected. This is considered a {get_outlier_severity(outlier_rate)} outlier rate. Consider removing outliers or using a more robust model.")
                 model_builder = model_display_names[model_choice]
                 selected_model = model_builder()
 
@@ -489,12 +506,23 @@ if 'data_file_data' in st.session_state:
                                             help="Choosing an ML model is heavily reliant on the structure of your data. Each model " \
                                             "has its own strengths and weaknesses and provides different use cases. " \
                                             "Read more about model selection [here.](https://www.ibm.com/think/topics/model-selection)")
+                
+                if model_choice in  ('Logistic Regression', 'k-Nearest Neighbors (k-NN)'):
+                    if data_form == "PCA Reduced":
+                        print("Outlier detection is not available for PCA reduced data.")
+                    else:
+                        results = st.session_state.get("outlier_results", {}).get(data_form)
+                        outlier_rate = results.get("outlier_rate") if results else None
+                        if results is not None:
+                            st.warning(f"The selected model is suscepitble to outliers. An outlier rate of {outlier_rate:.2f} was detected. This is considered a {get_outlier_severity(outlier_rate)} outlier rate. If necessary, consider removing outliers or using a more robust model.")
                 model_builder = model_display_names[model_choice]
                 selected_model = model_builder()
 
 
              # End Classification Code --------------------------------------------------------------------------
             st.session_state['unfitted_model'] = selected_model
+
+
 
 
             # Reset training flag if model selection changed
@@ -553,16 +581,17 @@ if 'data_file_data' in st.session_state:
                 st.subheader("Model Performance Metrics")
 
                 # Tracking parametric models to validate model assumptions
-                parametric_models = ("Logistic Regression", "Ridge Regressor")
-
-                if model_choice in parametric_models:
-                    # Get normality test results from session state
-                    normal_tests = st.session_state['normality_tests']
-                    
-                    # Index the boolean value containing normality from HZ test
-                    if normal_tests[data_form][2] == False:
-                        st.warning("Warning: the data fails an HZ test for multivariate normality.")
+                if model_choice in ("Logistic Regression", "Ridge Regressor"):
+                    if data_form == "PCA Reduced":
+                        print("Normality test is not available for PCA reduced data.")
+                    else:
+                        # Get normality test results from session state
+                        normal_tests = st.session_state['normality_tests']
                         
+                        # Index the boolean value containing normality from HZ test
+                        if normal_tests[data_form]['HZ_result'][2] == False:
+                            st.warning("Warning: the data fails an HZ test for multivariate normality.")
+                            
                 
                 # Check if model has been trained
                 if not st.session_state.get('model_trained', False):
