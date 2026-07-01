@@ -18,6 +18,8 @@ from sklearn.model_selection import train_test_split, cross_validate, Stratified
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.utils.validation import check_is_fitted
+import statsmodels.api as sm
+from statsmodels.stats.diagnostic import het_breuschpagan
 import seaborn as sns
 from time import time
 
@@ -302,8 +304,9 @@ if 'data_file_data' in st.session_state:
                 model_choice = st.selectbox('Choose Regression Algorithm', list(model_display_names.keys()))
                 if model_choice ==  ('Ridge Regressor'):
                     if data_form == "PCA Reduced":
-                        print("Outlier detection is not available for PCA reduced data.")
+                        print("Statistical testing is not available for PCA reduced data.")
                     else:
+                        # Isolation forest outlier detection
                         results = st.session_state.get("outlier_results", {}).get(data_form)
                         outlier_rate = results.get("outlier_rate") if results else None
                         if results is not None:
@@ -591,7 +594,32 @@ if 'data_file_data' in st.session_state:
                         # Index the boolean value containing normality from HZ test
                         if normal_tests[data_form]['HZ_result'][2] == False:
                             st.warning("Warning: the data fails an HZ test for multivariate normality.")
-                            
+
+                    if model_choice == "Ridge Regressor":
+                        
+                        # Check for homoscedasticity using Breusch-Pagan test
+                        if data_form == "PCA Reduced":
+                            print("Homoscedasticity test is not available for PCA reduced data.")
+                        else:
+                            # Fit the model to get residuals
+                            trained_model = st.session_state.get('trained_model')
+                            try:
+                                y_pred = trained_model.predict(X_train)
+                                residuals = y_train - y_pred
+
+                                X_bp = sm.add_constant(X_train.select_dtypes(include=np.number),
+                                                        has_constant="add")
+
+                                # Perform Breusch-Pagan test
+                                lm_stat, lm_pvalue, f_stat, f_pvalue = het_breuschpagan(residuals, X_bp)
+
+                                if lm_pvalue < 0.05:
+                                    st.warning("Warning: The Breusch-Pagan test indicates heteroscedasticity (p-value < 0.05).")
+                                else:
+                                    st.success("The Breusch-Pagan test indicates homoscedasticity (p-value >= 0.05).")
+                            except ValueError as e:
+                                print(f"Error during Breusch-Pagan test: {e}")
+                                
                 
                 # Check if model has been trained
                 if not st.session_state.get('model_trained', False):
